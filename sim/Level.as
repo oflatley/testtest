@@ -173,14 +173,14 @@ package sim
 			
 			if( _scrollSignaled ) {
 				_scrollSignaled = false;
-				trace( "signaled: " + playerPosition.x + ' ' + _ndxCurrentScreenSlice  );
+				//trace( "signaled: " + playerPosition.x + ' ' + _ndxCurrentScreenSlice  );
 				
 				// remove objects that have now gone offscreen to the left
 					
 				ar = buckets_endX[_ndxCurrentScreenSlice-1];
 				for each( var wo : WorldObject in ar ) {	
 					
-					trace( ' -- Removing:' + wo.GetBounds().left + ' ' + wo.GetBounds().right ); 
+					//trace( ' -- Removing:' + wo.GetBounds().left + ' ' + wo.GetBounds().right ); 
 					
 					removeObject(wo);					
 					if( wo.GetBounds().left > playerPosition.x ) {
@@ -192,7 +192,7 @@ package sim
 				addToActiveObjects( buckets_startX[_ndxCurrentScreenSlice + bucketSlices] );
 				nLeftmostBucketX += bucketWidth;				
 				
-				ObjectPool.Instance().debug();  									
+				//ObjectPool.Instance().debug();  									
 			}
 			
 			// update all active objects

@@ -12,12 +12,12 @@ package sim
 		private var objData : IWorldObjectData;
 		private var type : String;
 		
+		
 		public function WorldObject( _type:String  )
 		{
 			type = _type;
 			mc = createMC(type);
 			objData = createWorldObjData( type, mc );		
-
 			debugBounds = new Sprite();
 			debugBounds.graphics.lineStyle(2, 0x0000FF);
 			var r : Rectangle = GetBounds();
@@ -165,181 +165,116 @@ interface IWorldObjectData {
 	function testCollision( r : Rectangle ) : Boolean;
 	function update() : Point;
 	function onCollision( player : PlayerSim ) : void;
-	function get isConsumable() : Boolean;
+	function get isConsumable() : Boolean;	
 }
 
 
-class WorldObjData  {
+class WorldObjSimBase implements IWorldObjectData {
 	
-	private var rotationAngle : int;
-}
-
-class SpringBoardSim implements IWorldObjectData {
+	protected var _mc : MovieClip;
 	
-	private static const IMPULSE_Y : int = -40;
-	private var rBounds : Rectangle; 
-	private var _mc : MovieClip; 
-	
-	public function SpringBoardSim( mc : MovieClip ) {		
-  		_mc = mc;
+	public function WorldObjSimBase( mc : MovieClip ) {
+		_mc = mc;
 	}
 	
-	public function get isConsumable() : Boolean {
+	protected function getBounds() : Rectangle {
+		return new Rectangle( _mc.x, _mc.y, _mc.width, _mc.height );
+	}
+	
+	public function get isConsumable():Boolean
+	{
 		return false;
 	}
 	
-	   
-	public function getYat( x : Number ) : Number {
-		return rBounds.y;
-	}
-	
-	public function testCollision( r : Rectangle ) : Boolean {
-
-		rBounds = new Rectangle( _mc.x,  _mc.y, _mc.width, _mc.height );
-		return rBounds.intersects(r);
-	}
-	
-	public function update():Point
+	public function onCollision(player:PlayerSim):void
 	{
-		// TODO Auto Generated method stub
-		return null;
 	}
 	
 	public function setProps(props:Object):void
 	{
-		// TODO Auto Generated method stub
-		
 	}
-	public function onCollision( player:PlayerSim ) : void {
+	
+	public function update():Point
+	{
+		return null;
+	}
+	
+	
+	public function getYat( x: Number ) : Number {
+		return _mc.y;
+	}
+	
+	public function testCollision( r: Rectangle ) : Boolean {
+		return getBounds().intersects(r);
+	}
+}
+
+class SpringBoardSim extends WorldObjSimBase {
+	
+	private static const IMPULSE_Y : int = -40;
+
+	public function SpringBoardSim( mc : MovieClip ) {		
+		super(mc)
+	}
+	
+	override public function onCollision( player:PlayerSim ) : void {
 	
 		player.applyImpulse( new Point( 0, IMPULSE_Y ) );
 	}			
 }
 
-class SpeedBoostCoinSim implements IWorldObjectData {
+class SpeedBoostCoinSim extends WorldObjSimBase implements IWorldObjectData {
 	
 	private static const DURATION_MS : int = 3000;
 	private static const SPEED_MULTIPLIER : Number = 2;
 	
-	private var _mc:MovieClip;
 	
 	public function SpeedBoostCoinSim(mc:MovieClip) {
-		_mc = mc;
+		super(mc);
 	}
-	
-	public function getYat(x:Number):Number
-	{
-		return _mc.y;
-	}
-	
-	public function get isConsumable():Boolean
+		
+	override public function get isConsumable():Boolean
 	{
 		return true;
 	}
 	
-	public function onCollision(player:PlayerSim):void
+	override public function onCollision(player:PlayerSim):void
 	{
 		player.addSpeedBoost( DURATION_MS, SPEED_MULTIPLIER );		
 	}
-	
-	public function setProps(props:Object):void
-	{
-		// TODO Auto Generated method stub
-		
-	}
-	
-	public function testCollision(r:Rectangle):Boolean
-	{
-		var rBounds : Rectangle = new Rectangle( _mc.x,  _mc.y, _mc.width, _mc.height );
-		var b : Boolean = rBounds.intersects(r);
-		return b;
-	}
-	
-	public function update():Point
-	{
-		// TODO Auto Generated method stub
-		return null;
-	}
-	
 }
 
-class BrainCoin implements IWorldObjectData {
+class BrainCoin extends WorldObjSimBase implements IWorldObjectData {
 	
-	private var mc : MovieClip;
+	private static const BRAIN_COIN_VALUE : int = 1;
 	
-	public function BrainCoin( _mc : MovieClip ) {
-		mc = _mc;
+	public function BrainCoin( mc : MovieClip ) {
+		super(mc);	
 	}
 	
-	public function get isConsumable() : Boolean {
+	override public function get isConsumable() : Boolean {
 		return true;
 	}
 	
-	public function getYat(x:Number):Number
-	{
-		return mc.y;
-	}
-	
-	public function setProps(props:Object):void
-	{
-	}
-	
-	public function testCollision(r:Rectangle):Boolean
-	{
-		var rBounds : Rectangle = new Rectangle( mc.x,  mc.y, mc.width, mc.height );
-		var b : Boolean = rBounds.intersects(r);
-		return b;
-	}
-	
-	public function update():Point
-	{
-		// TODO Auto Generated method stub
-		return null;
-	}
-	
-	public function onCollision( player:PlayerSim ) : void {
-		//trace("brain freeze");
-		player.addCoins( 1 );
+	override public function onCollision( player:PlayerSim ) : void {
+		player.addCoins( BRAIN_COIN_VALUE );
 	}
 	
 }
 
 
-class ElevatorPlatform  implements IWorldObjectData {
+class ElevatorPlatform extends WorldObjSimBase implements IWorldObjectData {
 
-	private var mc : MovieClip;
 	private var theta : Number;
 	private var lastY : Number;
 	
-	public function ElevatorPlatform( _mc : MovieClip ) {
-		mc = _mc;
+	public function ElevatorPlatform( mc : MovieClip ) {
+		super(mc)
 		theta = 0;
 		lastY = 0;
 	}
-
-	public function get isConsumable() : Boolean {
-		return false;
-	}
-
-	
-	public function setProps( props : Object ) : void {
-	}
-	
-
-	
-	public function getYat(x:Number):Number
-	{
-		
-		return mc.y;
-	}
-	
-	public function testCollision(r:Rectangle):Boolean
-	{
-		var rBounds : Rectangle = new Rectangle( mc.x,  mc.y, mc.width, mc.height );
-		return CollisionManager.testRectxRect( r, rBounds );
-	}
-	
-	public function update():Point
+			
+	override public function update():Point
 	{
 		// TODO Auto Generated method stub
 		theta += Math.PI / 80;
@@ -349,48 +284,34 @@ class ElevatorPlatform  implements IWorldObjectData {
 		lastY = thisY;
 		return new Point( 0, delta );
 	}
-	public function onCollision( player:PlayerSim ) : void {
-	}		
-		
+
 }
 
-class EnemyBlob implements IWorldObjectData {
+class EnemyBlob extends WorldObjSimBase implements IWorldObjectData {
+
+	private static const VELOCITY_X : Number = 1;
 	
-	private var mc : MovieClip;
 	private var pImpulse : Point;
 	private var range : Number; 
 	private var homeX:Number;
 	private var dir:int;
-	private static var velX : Number = 2;
-	
-	public function EnemyBlob( _mc : MovieClip ) {
+
+	public function EnemyBlob( mc : MovieClip ) {
+		super(mc);
 		pImpulse = new Point();
-		mc = _mc;
 		dir = -1;		// start walking left
 	}
 	
-	public function get isConsumable() : Boolean {
-		return false;
-	}
-	
-	
-	public function getYat(x:Number):Number
-	{
-		// TODO Auto Generated method stub		
-		return mc.y;
-	}
-	
-	public function testCollision(r:Rectangle):Boolean
-	{
-		// TODO Auto Generated method stub
-		var rBounds : Rectangle = new Rectangle( mc.x,  mc.y, mc.width, mc.height );
-		return CollisionManager.testRectxRect( r, rBounds );
-	}
-	
-	public function update():Point
+	override public function update():Point
 	{
 		pImpulse.x = computeImpulseX();
 		return pImpulse;
+	}
+	
+	override public function setProps(props:Object):void
+	{
+		range = props.range;
+		homeX = props.homeX;
 	}
 	
 	private function computeImpulseX() : Number {
@@ -399,7 +320,7 @@ class EnemyBlob implements IWorldObjectData {
 			return 0;
 		}
 		
-		var newX : Number = mc.x + dir * velX;
+		var newX : Number = getBounds().left + dir * VELOCITY_X;
 		
 		if( newX <= homeX - range ) {
 			dir = 1;
@@ -409,68 +330,25 @@ class EnemyBlob implements IWorldObjectData {
 			dir = -1;
 			newX = homeX;
 		}
-		return newX - mc.x;			
+		return newX - getBounds().left;			
 		
 	}
 	
 	private function isOnscreen() : Boolean {
-  		return ScreenContainer.Instance().isOnscreen( mc.x );
+  		return ScreenContainer.Instance().isOnscreen( getBounds().left );
 	}
 	
-	public function setProps(props:Object):void
-	{
-		range = props.range;
-		homeX = props.homeX;
-	}
-	public function onCollision( player:PlayerSim ) : void {
-	}		
-	
+
 }
 
-class LevelPlatformData extends WorldObjData implements IWorldObjectData {
+class LevelPlatformData extends WorldObjSimBase implements IWorldObjectData {
 	
-	private var rBounds : Rectangle; 
-	private var mc : MovieClip; 
-	
-	public function LevelPlatformData( _mc : MovieClip ) {
-		
-		mc = _mc;
-		rBounds = new Rectangle( mc.x,  mc.y, mc.width, mc.height );
-	}
-	
-	public function get isConsumable() : Boolean {
-		return false;
-	}
-
-	
-	public function getYat( x : Number ) : Number {
-		return rBounds.y;
-	}
-	
-	public function testCollision( r : Rectangle ) : Boolean {
-		rBounds = new Rectangle( mc.x,  mc.y, mc.width, mc.height );
-		return CollisionManager.testRectxRect( r, rBounds );
-	}
-
-	
-	
-	public function update():Point
-	{
-		// TODO Auto Generated method stub
-		return null;
-	}
-	
-	public function setProps(props:Object):void
-	{
-		// TODO Auto Generated method stub
-		
-	}
-	public function onCollision( player:PlayerSim ) : void {
+	public function LevelPlatformData( mc : MovieClip ) {		
+		super(mc);
 	}		
-	
 }
 
-class SlopedPlatformData extends WorldObjData implements IWorldObjectData {
+class SlopedPlatformData extends WorldObjSimBase implements IWorldObjectData {
 
 	private static const PlatformHeight : int = 25;
 	private var ur : Point;
@@ -478,13 +356,10 @@ class SlopedPlatformData extends WorldObjData implements IWorldObjectData {
 	private var sliceHeight : Number;
 	private var slope : Number;
 	private var rotationAngle : Number;
-	private var rGrossBounds : Rectangle;
-	
-	
 	
 	public function SlopedPlatformData( type : String , mc : MovieClip ) {
-		
-		rGrossBounds = new Rectangle( mc.x, mc.y, mc.width, mc.height );
+
+		super(mc);
 		
 		var re : RegExp = /_\d+/;
 		var rotation : Array = type.match( re );
@@ -532,18 +407,13 @@ class SlopedPlatformData extends WorldObjData implements IWorldObjectData {
 		
 	}
 
-	public function get isConsumable() : Boolean {
-		return false;
-	}
-	
-	
-	public function getYat( x : Number ) : Number {
+	override public function getYat( x : Number ) : Number {
 		
 		return (x - ul.x) * slope + ul.y; 
 	}
 	
-	public function testCollision( r : Rectangle ) : Boolean { 
-		if( CollisionManager.testRectxRect( r, rGrossBounds ) ) {
+	override public function testCollision( r : Rectangle ) : Boolean { 
+		if( getBounds().intersects(r) ) {
 			if( r.containsPoint( ul ) || r.containsPoint(ur) || r.containsPoint( new Point( ul.x, ul.y + sliceHeight ) ) || r.containsPoint( new Point( ur.x, ur.y + sliceHeight ) ) ) {
 				return true;
 			}
@@ -571,21 +441,7 @@ class SlopedPlatformData extends WorldObjData implements IWorldObjectData {
 			}
 		}
 
-		return false;
-	}
-		
-	public function update():Point 
-	{
-		// TODO Auto Generated method stub
-		return null;
-	}
-	
-	public function setProps(props:Object):void
-	{
-		// TODO Auto Generated method stub
-		
-	}
-	public function onCollision( player:PlayerSim ) : void {
+		return false;	
 	}		
 	
 }

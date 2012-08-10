@@ -74,7 +74,7 @@ package
 		//	{type:"PlatformShort_0", 		x:0, 	y:0},
 		//	{type:"PlatformLong_0", 		x:200, 	y:300},
 	
-//			{type:"PlatformMedium_15",		x:0, 	y:510},
+	//		{type:"PlatformMedium_15",		x:0, 	y:510},
 //			{type:"PlatformMedium_345",		x:400, 	y:300},
 			
 			{type:"PlatformMedium_0", 		x:0,	y:500},
@@ -84,6 +84,7 @@ package
 			{type:"Brain",					x:220, y:250},
 
 			{type:"PlatformShort_0", 		x:260, 	y:555},
+			{type:"PlatformShort_0",		x:350,	y:505},
 			{type:"Enemy_0",				x:910,  y:555-17.5, props:{homeX:960,range:200}},
 			{type:"PlatformMedium_0", 		x:500,  y:450},
 			{type:"PlatformMedium_0", 		x:550,  y:400},
@@ -132,6 +133,8 @@ package
 			
 			{type:"PlatformShort_0" , 	count:10 },
 			{type:"PlatformMedium_0", 	count:10 },
+			{type:"PlatformMedium_15", 	count:10 },
+			{type:"PlatformMedium_345", count:10 },
 			{type:"PlatformLong_0", 	count:10 },
 			{type:"Enemy_0",			count:10 },
 			{type:"Column",				count:10 },
