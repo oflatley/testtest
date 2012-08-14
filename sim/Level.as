@@ -168,15 +168,12 @@ package sim
 				}
 			}			
 			collisionsToProcess.length = 0;
-			
-
-			
+					
 			if( _scrollSignaled ) {
 				_scrollSignaled = false;
 				//trace( "signaled: " + playerPosition.x + ' ' + _ndxCurrentScreenSlice  );
 				
 				// remove objects that have now gone offscreen to the left
-					
 				ar = buckets_endX[_ndxCurrentScreenSlice-1];
 				for each( var wo : WorldObject in ar ) {	
 					
@@ -185,8 +182,8 @@ package sim
 					removeObject(wo);					
 					if( wo.GetBounds().left > playerPosition.x ) {
 						trace("asdgasdgasd");
-					}				
-				}			
+					}
+				}		
 				
 				// add new objects just offscreen to the right
 				addToActiveObjects( buckets_startX[_ndxCurrentScreenSlice + bucketSlices] );

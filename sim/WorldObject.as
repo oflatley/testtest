@@ -110,6 +110,7 @@ package sim
 			var mc:MovieClip;
 			
 			switch(type) {		
+				case "Player" : return new Player() ; break;
 				case "SpringBoard": return new SpringBoard(); break;
 				case "Brain":	return new Brain(); break;
 				case "SpeedBoostCoin": return new SpeedBoostCoin(); break;
@@ -171,7 +172,6 @@ import sim.PlayerSim;
 
 import util.CollisionManager;
 import util.CollisionResult;
-import util.PolygonCollisionResult;
 import util.ScreenContainer;
 import util.Vector2;
 
@@ -439,6 +439,7 @@ class SlopedPlatformData extends WorldObjSimBase implements IWorldObjectData {
 	}
 	
 	//override public function testCollision( r : Rectangle ) : Boolean { 
+/*
 	override public function testCollision( r : Rectangle ) : CollisionResult {
 		
 		var code : int = 0;
@@ -483,7 +484,7 @@ class SlopedPlatformData extends WorldObjSimBase implements IWorldObjectData {
 trace('nope');
 		return null;	
 	}	
-	
+*/	
 	private function computeSlope( ) : Number {
 		return (_verts[VERT_INDEX_UR].y - _verts[VERT_INDEX_UL].y) / (_verts[VERT_INDEX_UR].x - _verts[VERT_INDEX_UL].x);
 	} 

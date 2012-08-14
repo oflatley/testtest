@@ -5,16 +5,17 @@ package views
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	
+	import sim.Level;
 	import sim.WorldObject;
 
 	public class PlayerView
 	{
-		private var mc:MovieClip;
+		private var mc:MovieClip;;
 		private var debugBounds : Sprite;	
 				
 		public function PlayerView()
 		{
-			mc = new Player(); 
+			mc = new Player();
 			
 			debugBounds = new Sprite();
 			debugBounds.graphics.lineStyle( 2, 0xFF0000 );

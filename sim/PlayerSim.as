@@ -57,6 +57,7 @@ package sim
 			_collisionMgr.addEventListener(CollisionEvent.PLAYERxWORLD, onCollision_playerVsWorld );
 		}
 		
+
 		private function reset(): void {
 			_nCoins = 0;
 		}
@@ -118,6 +119,12 @@ package sim
 
 		private function onCollision_playerVsWorld( collisionEvent : CollisionEvent ) : void {
 			
+			var cr : CollisionResult = collisionEvent.collisionResult;
+			var wo : WorldObject = cr.collidedObj;
+			var v : Vector2 = cr.msv;
+			
+			
+/*			
 			if( collisionEvent.collisionResult.code && CollisionResult.BOTTOMCODE ) {
 				blHadGroundCollisionThisFrame = true;
 				_moveState = MOVESTATE_WALKING;
@@ -125,6 +132,7 @@ package sim
 					
 			move( collisionEvent.collisionResult.impulse );
 			collisionEvent.collisionResult.collidedObj.onCollision( this );
+*/	
 		}
 
 		public function get worldPosition():Point

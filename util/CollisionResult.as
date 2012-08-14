@@ -12,7 +12,7 @@ package util
 		public static const BOTTOMCODE:int = 8;
 		
 		private var _code:Number;
-		private var _impulse:Vector2;
+		private var _minSeperatingVector:Vector2;
 		private var _collidedObj:WorldObject;
 		
 		public function CollisionResult( code:Number = 0 , impulse:Vector2 = null, obj:WorldObject = null )
@@ -22,7 +22,7 @@ package util
 		
 		public function init( code:Number = 0 , impulse:Vector2 = null, obj:WorldObject = null ) : void{
 			_code = code;
-			_impulse = impulse;
+			_minSeperatingVector = impulse;
 			_collidedObj = obj;			
 		}
 
@@ -34,12 +34,12 @@ package util
 			_code = value;
 		}
 
-		public function get impulse():Vector2 {
-			return _impulse;
+		public function get msv():Vector2 {
+			return _minSeperatingVector;
 		}
 
-		public function set impulse(value:Vector2):void {
-			_impulse = value;
+		public function set msv(value:Vector2):void {
+			_minSeperatingVector = value;
 		}
 
 		public function get collidedObj():WorldObject {

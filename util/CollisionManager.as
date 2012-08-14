@@ -18,13 +18,30 @@ package util
 		public function CollisionManager() {
 		}
 
-		public function update( player:PlayerSim, worldObjects:Array ) : void  {
+		public function update( player:PlayerSim, activeWorldObjects:Array ) : void  {
+
+			// TODO broad culling of objects based on screen/world slice
 			
-			switch ( player.moveState ) {
-				case PlayerSim.MOVESTATE_JUMPING: doCollisionsWalking( player, worldObjects ); break;
-				case PlayerSim.MOVESTATE_WALKING: doCollisionsWalking( player, worldObjects ) ; break;
-				default: trace("unknown fasdjkhgnsadl;ingbsadlik");					
+			var playerBounds : Rectangle = player.getBounds();
+			var results:Array = new Array();	
+			
+			for each( var wo : WorldObject in activeWorldObjects ) {
+				
+				var cr : CollisionResult = wo.testCollision( playerBounds ); 
+				if( cr ) {
+					results.push(cr);
+				}
 			}
+
+			for each( cr in results ) {
+				this.dispatchEvent( new CollisionEvent( CollisionEvent.PLAYERxWORLD, cr ) );
+			}
+			
+//			switch ( player.moveState ) {
+//				case PlayerSim.MOVESTATE_JUMPING: doCollisionsWalking( player, worldObjects ); break;
+//				case PlayerSim.MOVESTATE_WALKING: doCollisionsWalking( player, worldObjects ) ; break;
+//				default: trace("unknown fasdjkhgnsadl;ingbsadlik");					
+//			}
 		}
 		
 		private function doCollisionsJumping( player:PlayerSim, worldObjects:Array ) : void  {
@@ -133,6 +150,7 @@ package util
 	
 		// Calculate the projection of a polygon on an axis
 		// and returns it as a [min, max] interval
+/*
 		public static function ProjectPolygon( axis : Vector2, polygon : Rectangle, min : Number, max : Number) : void  {
 				// To project a point on an axis use the dot product
 			
@@ -160,137 +178,17 @@ package util
 				}
 			}
 		}
-		
-		// Calculate the distance between [minA, maxA] and [minB, maxB]
-		// The distance will be negative if the intervals overlap
-		public static function IntervalDistance( minA : Number, maxA : Number, minB : Number, maxB : Number) : Number{
-			if (minA < minB) {
-				return minB - maxA;
-			} else {
-				return minA - maxB;
-			}
+*/
+		private static function center( r:Rectangle ) : Point {
+			
+			var x : Number = r.left + r.right;
+			var y : Number = r.top + r.bottom;
+			
+			x /= 2;
+			y /= 2;
+			
+			return new Point( x, y ) ;
 		}
-		
-		// Check if polygon A is going to collide with polygon B.
-		// The last parameter is the *relative* velocity 
-		// of the polygons (i.e. velocityA - velocityB)
-		public static function PolygonCollision( polygonA : Rectangle, polygonB : Rectangle , velocity : Vector2) : PolygonCollisionResult {
-			
-			
-			var result : PolygonCollisionResult = new PolygonCollisionResult();
-			result.Intersect = true;
-			result.WillIntersect = true;
-				
-			var edgeCountA : int = 4; //polygonA.Edges.Count;
-			var edgeCountB : int = 4; //polygonB.Edges.Count;
-			var minIntervalDistance : Number = Infinity;
-			var translationAxis : Vector2 = new Vector2();
-			var edge : Vector2;
-			
-			var edgesA : Array = new Array(edgeCountA);
-			var edgesB : Array = new Array(edgeCountB);
-			
-			for( var n : int = 0; n < 4; ++n )
-			{
-				edgesA[n] = new Vector2();
-				edgesB[n] = new Vector2();
-			}
-		
-			edgesA[0].setValueFromPoint( polygonA.topLeft );
-			edgesA[1].setValue( polygonA.right, polygonA.top );
-			edgesA[2].setValueFromPoint( polygonA.bottomRight );
-			edgesA[3].setValue( polygonA.left, polygonA.bottom );
-
-			edgesB[0].setValueFromPoint( polygonB.topLeft );			
-			edgesB[1].setValue( polygonB.right, polygonB.top );
-			edgesB[2].setValueFromPoint( polygonB.bottomRight );			
-			edgesB[3].setValue( polygonB.left, polygonB.bottom );
-			
-			
-			// Loop through all the edges of both polygons
-			for (var edgeIndex:int = 0; edgeIndex < edgeCountA + edgeCountB; edgeIndex++) {
-				if (edgeIndex < edgeCountA) {
-					edge = edgesA[edgeIndex];
-				} else {
-					edge = edgesB[edgeIndex - edgeCountA];
-				}
-					
-				// ===== 1. Find if the polygons are currently intersecting =====
-					
-				// Find the axis perpendicular to the current edge
-				var axis : Vector2 = new Vector2(); 
-				axis.setValue(-edge.y, edge.x);
-				axis.normalize();
-					
-				// Find the projection of the polygon on the current axis
-				var minA : Number = 0; var minB : Number = 0; var maxA : Number = 0; var maxB : Number = 0;
-				ProjectPolygon(axis, polygonA, minA, maxA);
-				ProjectPolygon(axis, polygonB, minB, maxB);
-				
-					// Check if the polygon projections are currentlty intersecting
-				if (IntervalDistance(minA, maxA, minB, maxB) > 0) {
-					result.Intersect = false;
-				}	
-					
-				// ===== 2. Now find if the polygons *will* intersect =====
-					
-				// Project the velocity on the current axis
-				var velocityProjection : Number = axis.dot(velocity);
-					
-				// Get the projection of polygon A during the movement
-				if (velocityProjection < 0) {
-					minA += velocityProjection;
-				} else {
-					maxA += velocityProjection;
-				}
-					
-				// Do the same test as above for the new projection
-				var intervalDistance : Number = IntervalDistance(minA, maxA, minB, maxB);
-				if (intervalDistance > 0) result.WillIntersect = false;
-					
-					// If the polygons are not intersecting and won't intersect, exit the loop
-					if (!result.Intersect && !result.WillIntersect) break;
-					
-					// Check if the current interval distance is the minimum one. If so store
-					// the interval distance and the current distance.
-					// This will be used to calculate the minimum translation vector
-					intervalDistance = Math.abs(intervalDistance);
-					if (intervalDistance < minIntervalDistance) {
-						minIntervalDistance = intervalDistance;
-						translationAxis = axis;
-						
-						var d : Vector2 = Vector2.differenceOfPoints( center(polygonA),  center(polygonB) );
-						if (d.dot(translationAxis) < 0)
-							translationAxis.negate();
-					}
-				}
-				
-				// The minimum translation vector
-				// can be used to push the polygons appart.
-				if (result.WillIntersect) {
-					translationAxis.scale( minIntervalDistance );
-					result.MinimumTranslationVector = translationAxis;
-				}
-				return result;
-			}		
-
-			private static function center( r:Rectangle ) : Point {
-				
-				var x : Number = r.left + r.right;
-				var y : Number = r.top + r.bottom;
-				
-				x /= 2;
-				y /= 2;
-				
-				return new Point( x, y ) ;
-				//return new Point( r.left + r.right / 2, r.top + r.bottom / 2 );
-				
-//				var p : Vector2 = new Point();
-//				p.x = 
-				
-			//	p.setValue( r.left + r.right / 2, r.top + r.bottom / 2 ); 	
-			//	return p;
-			}
 
 			private static function buildVertArray( r : Rectangle ) : Vector.<Vector2> {
 				var verts:Vector.<Vector2> = new Vector.<Vector2>();
@@ -324,27 +222,11 @@ package util
 				
 				var msv : Vector2;
 				var msvMagnitudeSquared : Number = Infinity;
-				
-				// add a little padding to make the test work correctly
-/*
-				if (vectors1.length == 2) {
-					var temp:Vector2 = new Vector2(-(vectors1[1].y - vectors1[0].y), vectors1[1].x - vectors1[0].x);
-					temp.truncate(0.0000000001);
-					vectors1.push(vectors1[1].add(temp));
-				}
-				if (vectors2.length == 2) {
-					temp = new Vector2(-(vectors2[1].y - vectors2[0].y), vectors2[1].x - vectors2[0].x);
-					temp.truncate(0.0000000001);
-					vectors2.push(vectors2[1].add(temp));
-				}
-*/				
-				
+								
 				// find vertical offset				
 				var center1 : Point = center(polygon1);
 				var center2 : Point = center(polygon2) ;
 				vectorOffset= new Vector2(center1.x - center2.x, center1.y - center2.y);
-				
-				//vectorOffset= new Vector2(polygon1.x - polygon2.x, polygon1.y - polygon2.y);
 				
 				// loop to begin projection
 				for (var i:int = 0; i < vectors1.length; i++) {
@@ -396,7 +278,6 @@ package util
 				//if you're here, there is a collision
 				msv.negate();
 				return msv;
-				//return new Vector2(axis.x*((max2-min1)*-1) , axis.y*((max2-min1)*-1) ); //return the separation, apply it to a polygon to separate the two shapes.
 			}	
 			
 			

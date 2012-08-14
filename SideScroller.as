@@ -1,20 +1,5 @@
 package
 {
-/* TODO
-	player physics
-	collisions 
-	-- arbitrary rotation
-	-- which side
-	worldobj data (
-	sloping platforms
-	animations -- need them for states  e.g. when in collision, we can not jump
-	level -- start end
-	*/	
-	
-	
-	
-	
-	
 	import events.ControllerEvent;
 	
 	import flash.display.Loader;
@@ -62,8 +47,8 @@ package
 		//	{type:"PlatformShort_0", 		x:0, 	y:0},
 		//	{type:"PlatformLong_0", 		x:200, 	y:300},
 	
-//			{type:"PlatformMedium_15",		x:0, 	y:510},
-//			{type:"PlatformMedium_345",		x:400, 	y:300},
+			{type:"PlatformMedium_15",		x:0, 	y:510},
+			{type:"PlatformMedium_345",		x:400, 	y:300},
 		
 			{type:"PlatformMedium_0", 		x:0,	y:500},
 		
@@ -196,3 +181,4 @@ package
 		}
 	}
 }
+
