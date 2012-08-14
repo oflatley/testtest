@@ -54,29 +54,17 @@ package
 	
 		private static const levelData0 : Array = [
 
-/*			
-			{type:"PlatformLong_0", 		x:140,	y:500},
+//			{type:"PlatformMedium_0", 		x:0,	y:500},
+//			{type:"Column",					x:75,  y:450},
 
-			{type:"Column",					 x:120,  y:450},
-			{type:"Column",					 x:240,  y:450},
-			{type:"Column",					 x:360,  y:450},
-			{type:"Column",					 x:480,  y:450},
-			{type:"Column",					 x:600,  y:450},
-			{type:"Column",					 x:720,  y:450},
-			{type:"Column",					 x:840,  y:450},
-			{type:"Column",					 x:960,  y:450},
-			{type:"Column",					 x:1080,  y:450},
-			{type:"Column",					 x:1200,  y:450},
-			{type:"Column",					 x:1320,  y:450},
-			{type:"Column",					 x:1440,  y:450},
-*/			
+			
 			
 		//	{type:"PlatformShort_0", 		x:0, 	y:0},
 		//	{type:"PlatformLong_0", 		x:200, 	y:300},
 	
-	//		{type:"PlatformMedium_15",		x:0, 	y:510},
+//			{type:"PlatformMedium_15",		x:0, 	y:510},
 //			{type:"PlatformMedium_345",		x:400, 	y:300},
-			
+		
 			{type:"PlatformMedium_0", 		x:0,	y:500},
 		
 			{type:"Column",					 x:65,  y:450},

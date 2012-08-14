@@ -1,11 +1,16 @@
 package sim
 {
+	import events.CollisionEvent;
+	
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
+	import flash.events.EventDispatcher;
 	import flash.geom.Point;
-	import flash.geom.Rectangle;	
+	import flash.geom.Rectangle;
+	
+	import util.CollisionResult;
 
-	public class WorldObject
+	public class WorldObject extends EventDispatcher
 	{
 		private var debugBounds:Sprite;
 		private var mc:MovieClip;
@@ -87,8 +92,17 @@ package sim
 			return objData.getYat( xWorld );
 		}
 		
-		public function testCollision( r : Rectangle ) : Boolean {
-			return objData.testCollision( r );
+		public function testCollision( r : Rectangle ) : CollisionResult {
+
+			var cr : CollisionResult = objData.testCollision(r);
+			if( cr ) {
+				cr.collidedObj = this;	// TODO, pass iface objData
+				//dispatchEvent( new CollisionEvent( CollisionEvent.PLAYERxWORLD, cr ) );
+				//return true;
+			}
+			return cr;
+			//return false;
+			//return objData.testCollision( r );
 		}
 		
 		private function createMC(type:String):MovieClip
@@ -156,25 +170,33 @@ import flashx.textLayout.operations.MoveChildrenOperation;
 import sim.PlayerSim;
 
 import util.CollisionManager;
+import util.CollisionResult;
+import util.PolygonCollisionResult;
 import util.ScreenContainer;
+import util.Vector2;
 
 
 interface IWorldObjectData {
 	function setProps( props:Object ) : void ;
 	function getYat( x:Number ) : Number;
-	function testCollision( r : Rectangle ) : Boolean;
+	//function testCollision( r : Rectangle ) : Boolean;
+	function testCollision( r: Rectangle ) : CollisionResult;
 	function update() : Point;
 	function onCollision( player : PlayerSim ) : void;
 	function get isConsumable() : Boolean;	
 }
 
 
-class WorldObjSimBase implements IWorldObjectData {
+class WorldObjSimBase extends EventDispatcher implements IWorldObjectData {
 	
 	protected var _mc : MovieClip;
+	protected var _collisionImpulse : Point;
+	protected var _collisionResult : CollisionResult;
 	
 	public function WorldObjSimBase( mc : MovieClip ) {
 		_mc = mc;
+		_collisionImpulse = new Point();
+		_collisionResult = new CollisionResult();
 	}
 	
 	protected function getBounds() : Rectangle {
@@ -204,8 +226,20 @@ class WorldObjSimBase implements IWorldObjectData {
 		return _mc.y;
 	}
 	
-	public function testCollision( r: Rectangle ) : Boolean {
-		return getBounds().intersects(r);
+	public function testCollision( r: Rectangle ) : CollisionResult {
+
+		var b : Boolean = getBounds().intersects(r)	;		
+		var msv : Vector2 = CollisionManager.SAT( r, getBounds() );
+				
+		if( msv ) {
+			
+			var code :int  = 0;
+			return new CollisionResult( code, msv) ;
+			// dispatchEvent( new CollisionEvent( CollisionEvent.PLAYERxWORLD, new CollisionResult( code, _collisionImpulse, null) ) );
+			//return true;
+		}
+		return null;
+		//return false;	
 	}
 }
 
@@ -350,99 +384,132 @@ class LevelPlatformData extends WorldObjSimBase implements IWorldObjectData {
 
 class SlopedPlatformData extends WorldObjSimBase implements IWorldObjectData {
 
+	private static const VERT_INDEX_UL : int = 0;
+	private static const VERT_INDEX_UR : int = 1;
+	private static const VERT_INDEX_LR : int = 2;
+	private static const VERT_INDEX_LL : int = 3;
+	
 	private static const PlatformHeight : int = 25;
-	private var ur : Point;
-	private var ul : Point;
 	private var sliceHeight : Number;
 	private var slope : Number;
 	private var rotationAngle : Number;
+	private var _verts : Array;
+	private var buildVerts : Function;
 	
 	public function SlopedPlatformData( type : String , mc : MovieClip ) {
 
 		super(mc);
 		
+		_verts = new Array(4);
+		for( var i : int = 0; i < 4; ++i ) {
+			_verts[i] = new Point();
+		}
+		
 		var re : RegExp = /_\d+/;
 		var rotation : Array = type.match( re );
 		
 		if( rotation && rotation.length > 0 ) {
-		//	trace( rotation[0] );
-			
+		//	trace( rotation[0] );			
 			var sR:String = rotation[0].substr(1);
 			rotationAngle = int(sR);
-			ul  = new Point();
-			ur  = new Point();
-			
-			if( 0 != rotationAngle ) {
-				
-				sliceHeight = mc.height - PlatformHeight * Math.sin( rotationAngle );				
-				
-				if( rotationAngle > 180 ) {	// upslope				
-					
-					ul.x = mc.x;
-					ul.y = mc.y + sliceHeight;
-					
-					ur.x = mc.x + mc.width;
-					ur.y = mc.y - mc.height;
-					
-					//trace( ul.x + ' ' + ul.y + ' '  + ur.x + ' ' + ur.y );
-				}
-				else { // ... rotationAngle < 180 --> downslope
-					sliceHeight = PlatformHeight * Math.sin( rotationAngle );
-					
-					ul.x = mc.x;
-					ul.y = mc.y;
-					
-					ur.x = mc.x + mc.width;
-					ur.y = mc.y + sliceHeight;
-					
-					//trace( ul.x + ' ' + ul.y + ' '  + ur.x + ' ' + ur.y );			
-				}
-				
-				slope = (ur.y-ul.y) / (ur.x-ul.x);
-			} 
-		}
-		else {
-			trace ("wtf: SlopedPlatformData ctr");
-		}
-		
-	}
 
-	override public function getYat( x : Number ) : Number {
+			if( rotationAngle > 180 ) {  // upslope
+				sliceHeight = mc.height - PlatformHeight * Math.sin( rotationAngle );
+				buildVerts = buildVerts_ascendingPlatform;
+			} else {
+				sliceHeight = PlatformHeight * Math.sin( rotationAngle );
+				buildVerts = buildVerts_descendingPlatform;
+			}
+			
+		} else {
+			trace ("wtf: SlopedPlatformData ctr");
+			rotationAngle = 0;
+			sliceHeight = mc.height;
+		}
 		
-		return (x - ul.x) * slope + ul.y; 
+		buildVerts();
+		slope = computeSlope();		// must call buildVerts at least once before computeSlop is valid				
 	}
 	
-	override public function testCollision( r : Rectangle ) : Boolean { 
+	
+		
+	override public function getYat( x : Number ) : Number {
+		
+		return (x - _verts[VERT_INDEX_UL].x) * slope + _verts[VERT_INDEX_UL].y; 
+	}
+	
+	//override public function testCollision( r : Rectangle ) : Boolean { 
+	override public function testCollision( r : Rectangle ) : CollisionResult {
+		
+		var code : int = 0;
+		
+		buildVerts();
 		if( getBounds().intersects(r) ) {
-			if( r.containsPoint( ul ) || r.containsPoint(ur) || r.containsPoint( new Point( ul.x, ul.y + sliceHeight ) ) || r.containsPoint( new Point( ur.x, ur.y + sliceHeight ) ) ) {
-				return true;
+			if( r.containsPoint( _verts[VERT_INDEX_UL] ) || r.containsPoint(_verts[VERT_INDEX_UR]) || r.containsPoint(_verts[VERT_INDEX_LR]) || r.containsPoint(_verts[VERT_INDEX_LL]) ) {
+				trace('collide 0');
+				return _collisionResult;
 			}
 			
 			var yatx_top : Number = getYat( r.left );
 			var yatx_bot : Number = yatx_top + sliceHeight;
 		
 			if( r.top > yatx_top && r.top < yatx_bot ) {
-				return true;
+				trace('collide 1');
+
+				return _collisionResult;
 			}
 				
 			if( r.bottom > yatx_top && r.bottom < yatx_bot ) {
-				return true;
+				trace('collide 2');
+
+				return _collisionResult;
 			}
 			
 			yatx_top = getYat( r.right );
 			yatx_bot = yatx_top + sliceHeight;			
 			
 			if( r.top > yatx_top && r.top < yatx_bot ) {
-				return true;
+				trace('collide 3');
+
+				return _collisionResult;
 			}
 			
 			if( r.bottom > yatx_top && r.bottom < yatx_bot ) {
-				return true;
+				trace('collide 4');
+
+				return _collisionResult;
 			}
 		}
-
-		return false;	
-	}		
+trace('nope');
+		return null;	
+	}	
+	
+	private function computeSlope( ) : Number {
+		return (_verts[VERT_INDEX_UR].y - _verts[VERT_INDEX_UL].y) / (_verts[VERT_INDEX_UR].x - _verts[VERT_INDEX_UL].x);
+	} 
+	
+	private function buildVerts_descendingPlatform() : void {
+		_verts[VERT_INDEX_UL].x = _mc.x;
+		_verts[VERT_INDEX_UL].y = _mc.y;
+		_verts[VERT_INDEX_UR].x = _mc.x + _mc.width;
+		_verts[VERT_INDEX_UR].y = _mc.y + _mc.height - sliceHeight;
+		_verts[VERT_INDEX_LR].x = _mc.x + _mc.width;
+		_verts[VERT_INDEX_LR].y = _mc.y + _mc.height;
+		_verts[VERT_INDEX_LL].x = _mc.x;
+		_verts[VERT_INDEX_LL].y = _mc.y + sliceHeight;
+	}
+	
+	private function buildVerts_ascendingPlatform() : void {
+		_verts[VERT_INDEX_UL].x = _mc.x;
+		_verts[VERT_INDEX_UL].y = _mc.y + _mc.height - sliceHeight;
+		_verts[VERT_INDEX_UR].x = _mc.x + _mc.width;
+		_verts[VERT_INDEX_UR].y = _mc.y;
+		_verts[VERT_INDEX_LR].x = _mc.x + _mc.width;
+		_verts[VERT_INDEX_LR].y = _mc.y + sliceHeight;
+		_verts[VERT_INDEX_LL].x = _mc.x;
+		_verts[VERT_INDEX_LL].y = _mc.y + _mc.height;		
+	}
+	
 	
 }
 

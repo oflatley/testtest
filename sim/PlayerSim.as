@@ -14,6 +14,7 @@ package sim
 	import util.CollisionManager;
 	import util.CollisionResult;
 	import util.Controller;
+	import util.Vector2;
 	
 	import views.PlayerView;
 	
@@ -90,7 +91,7 @@ package sim
 		public function Update() : void {
  			_moveState = MOVESTATE_JUMPING;  // set to walking in onCollision_playerxWorld is collision with ground, otherwise assume jumping each frame
 			blHadGroundCollisionThisFrame = false;			
-			var pos:Point = new Point();
+			var pos:Vector2 = new Vector2();
 			
 			pos.x += velocityX * _speedMultiplier;
 			
@@ -105,7 +106,7 @@ package sim
 		}
 		
 
-		private function move( v:Point ) : void {
+		private function move( v:Vector2 ) : void {
 			
 			worldPosition = new Point( v.x + worldPosition.x, v.y + worldPosition.y);
 		}
