@@ -45,7 +45,7 @@ package
 			
 			
 		//	{type:"PlatformShort_0", 		x:0, 	y:0},
-		//	{type:"PlatformLong_0", 		x:200, 	y:300},
+			{type:"PlatformLong_0", 		x:200, 	y:300},
 	
 			{type:"PlatformMedium_15",		x:0, 	y:510},
 			{type:"PlatformMedium_345",		x:400, 	y:300},
