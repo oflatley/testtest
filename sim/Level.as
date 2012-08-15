@@ -1,6 +1,7 @@
 package sim
 {
 	import events.CollisionEvent;
+	import events.RemoveFromWorldEvent;
 	import events.ScreenContainerEvent;
 	
 	import flash.display.Loader;
@@ -29,13 +30,16 @@ package sim
 		private var collisionsToProcess : Array; 
 		private var _scrollSignaled : Boolean;
 		private var _ndxCurrentScreenSlice : int;
+		private var _objectsToRemove : Array;
 	
-		public function Level(_data:Object, _collisionMgr : CollisionManager)
+		public function Level(_data:Object, _collisionMgr : CollisionManager, playerSim : PlayerSim)
 		{
 			_scrollSignaled = false;
 			
 			_collisionMgr.addEventListener( CollisionEvent.PLAYERxWORLD, onPlayerxWorldCollision );
 			ScreenContainer.Instance().addEventListener( ScreenContainerEvent.SLICE_SCROLL, onSliceScroll );
+			playerSim.addEventListener( RemoveFromWorldEvent.REMOVE_FROM_WORLD, onRemoveFromWorld );
+			
 			
 			ScreenContainer.Instance().SetSliceCount(bucketSlices);	
 			collisionsToProcess = new Array();	
@@ -44,6 +48,7 @@ package sim
 			_activeObjects = new Array();
 			buckets_startX = new Array();
 			buckets_endX = new Array();
+			_objectsToRemove = new Array();
 			
 			// find max x
 			var maxX : int = 0;
@@ -87,6 +92,11 @@ package sim
 			for( var n1 : int = 0; n1 < bucketSlices + nBucketsOffscreenOnRight; ++n1  ) {
 				addToActiveObjects( buckets_startX[n1] ) ;
 			}
+		}
+		
+		protected function onRemoveFromWorld(event:RemoveFromWorldEvent):void
+		{
+			_objectsToRemove.push( event.objToRemove );
 		}
 		
 		private function onSliceScroll( event : ScreenContainerEvent ) : void {
@@ -142,12 +152,18 @@ package sim
 			removeFromActiveObjects( woToRemove );	
 			ObjectPool.Instance().RecycleObj( woToRemove );
 			// do not bother removing from buckets_endX --> do that between levels			
-		}
+ 		}
 		
 		
 		public function update( playerPosition : Point ) : void {
 
 			var ar : Array;
+			
+			for each (var woToRemove :WorldObject  in _objectsToRemove) 
+			{
+				removeObject( woToRemove );	
+			}
+			_objectsToRemove.length = 0;
 			
 			for each( var cr : CollisionResult in collisionsToProcess ) {
 				if( cr.collidedObj.isConsumable) {

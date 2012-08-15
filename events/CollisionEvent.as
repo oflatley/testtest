@@ -7,7 +7,7 @@ package events
 	public class CollisionEvent extends Event
 	{
 		public static const PLAYERxWORLD : String = "playerxWorld";
-		public static const PLAYERxCOIN : String =  "playerxCoin";
+		//public static const PLAYERxCOIN : String =  "playerxCoin";
 		
 		public var collisionResult : CollisionResult;
 		

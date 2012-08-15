@@ -2,6 +2,7 @@ package sim
 {
 	import events.CollisionEvent;
 	import events.ControllerEvent;
+	import events.RemoveFromWorldEvent;
 	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
@@ -21,11 +22,8 @@ package sim
 	
 	public class PlayerSim extends EventDispatcher
 	{
-		
 		public static const MOVESTATE_WALKING : int = 1;
 		public static const MOVESTATE_JUMPING : int = 2; 
-		
-		
 
 		private var playerController : Controller;
 
@@ -39,6 +37,7 @@ package sim
 		private var blHadGroundCollisionThisFrame : Boolean = false;
 		private var _nCoins : int;
 		private var _speedMultiplier : Number = 1.0;
+		private var _isCollideable : Boolean = true;
 		
 		public function PlayerSim( controller:Controller, velX:Number, _gravity:Number, _playerView:PlayerView, _collisionMgr : CollisionManager )
 		{
@@ -119,22 +118,47 @@ package sim
 
 		private function onCollision_playerVsWorld( collisionEvent : CollisionEvent ) : void {
 			
-			var cr : CollisionResult = collisionEvent.collisionResult;
-			var wo : WorldObject = cr.collidedObj;
-			var v : Vector2 = cr.msv;
+			if( _isCollideable ) {
 			
-			
-/*			
-			if( collisionEvent.collisionResult.code && CollisionResult.BOTTOMCODE ) {
-				blHadGroundCollisionThisFrame = true;
-				_moveState = MOVESTATE_WALKING;
-			}
+				var cr : CollisionResult = collisionEvent.collisionResult;
+				var wo : WorldObject = cr.collidedObj;
+				var v : Vector2 = cr.msv;
+				
+				if( wo.isMonster ) {
+		
+					if( v.y < 0 && -v.y > Math.abs(v.x) ) {
+						// player hit monster from above --> Kill the monster
+						dispatchEvent( new RemoveFromWorldEvent( RemoveFromWorldEvent.REMOVE_FROM_WORLD, wo ) );
+						velocity.y -= 20;
+					}
+					else {
+						// player hit monster from the side or from below --> penalize player
+						trace('from side or below');
+						_isCollideable = false;
+						setInterval( restoreCollisionEnabled, 1000 );
+					}
+				}
+				else
+				{
+					var bCollisionFromBelow : Boolean = v.y > 0;
 					
-			move( collisionEvent.collisionResult.impulse );
-			collisionEvent.collisionResult.collidedObj.onCollision( this );
-*/	
-		}
+					if( bCollisionFromBelow && !wo.isCollideableFromBelow ) {
+					
+					}
+					else {
+						move( v );
+						collisionEvent.collisionResult.collidedObj.onCollision( this );			
+					}
+				}
+			}			
 
+		}
+		
+		private function restoreCollisionEnabled():void
+		{
+			_isCollideable = true; 
+		}
+		
 		public function get worldPosition():Point
 		{
 			return _worldPosition;

@@ -5,6 +5,7 @@ package util
 	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.EventDispatcher;
+	import flash.geom.Point;
 	
 	public class ScreenContainer extends EventDispatcher
 	{
@@ -15,6 +16,11 @@ package util
 		private var _sliceCount : int;
 		private var _sliceWidth : int; 		// TODO resize
 		private var _ndxCurrentSlice : int;
+		
+		private static const _THETASTEPSIZE : Number = Math.PI / 100;
+		private var _theta : Number = 0;
+		
+		
 		
 		public static function Instance() : ScreenContainer {
 			if( null == sc ) {
@@ -29,7 +35,7 @@ package util
 		}
 		
 		// prevent clients from breaking singleton pattern. ctr requires internal class
-		public function ScreenContainer(_:SingletonEnforcer)
+		public function ScreenContainer(_:SingletonEnforcer) 
 		{
 			_container = new Sprite();
 			_ndxCurrentSlice = 0;
@@ -47,12 +53,12 @@ package util
 		}
 
 		
-		public function update( xPlayer : Number ) : void {
+		public function update( playerPosition : Point ) : void {
 			
-			var overMargin : Number = xPlayer - _xMargin;
+			var overMarginX : Number = playerPosition.x - _xMargin;
 			
-			if( overMargin > 0 ) {
- 				_container.x = -overMargin;
+			if( overMarginX > 0 ) {
+ 				_container.x = -overMarginX;
 			}			
 			
 			var x : int = -container.x / _sliceWidth;
@@ -61,6 +67,20 @@ package util
 				dispatchEvent( new ScreenContainerEvent( ScreenContainerEvent.SLICE_SCROLL, x ) );
 				_ndxCurrentSlice = x;
 			}		
+			
+			var _yMargin : Number = 200;
+			
+			if( _container.y < 0 ) {
+				_container.y += 6;
+			}
+			
+			var overMarginY : Number = playerPosition.y - _yMargin;
+			if( overMarginY < 0 ) {
+				_container.y = -overMarginY;
+			}
+			
+			
+		
 		}
 
 		public function isOnscreen( x : Number ) : Boolean {

@@ -45,10 +45,10 @@ package
 			
 			
 		//	{type:"PlatformShort_0", 		x:0, 	y:0},
-			{type:"PlatformLong_0", 		x:200, 	y:300},
+		//	{type:"PlatformLong_0", 		x:200, 	y:300},
 	
-			{type:"PlatformMedium_15",		x:0, 	y:510},
-			{type:"PlatformMedium_345",		x:400, 	y:300},
+			//{type:"PlatformMedium_15",		x:0, 	y:510},
+			//{type:"PlatformMedium_345",		x:400, 	y:300},
 		
 			{type:"PlatformMedium_0", 		x:0,	y:500},
 		
@@ -82,7 +82,7 @@ package
 			{type:"Brain",					x:2480, y:420},
 			{type:"SpeedBoostCoin",			x:2510, y:420},
 			
-			{type:"PlatformLong_0", 		x:2360, y:555},			
+			{type:"PlatformLong_0", 		x:2560, y:555},			
 			{type:"PlatformLong_0", 		x:2860, y:455},
 			{type:"PlatformLong_0", 		x:3160, y:555},
 			{type:"PlatformLong_0", 		x:3460, y:455},
@@ -138,17 +138,17 @@ package
 		
 		private function startGame():void{
 
-			// todo refactor into input module
-			currentLevel = new Level(levelData0,collisionManager);
 
 			var playerView : PlayerView = new PlayerView(  );
 			playerView.AddToScene( screenContainer.container );
 				
 			playerSim = new PlayerSim(new Controller(stage), velocityX, gravity, playerView, collisionManager );
-	//		playerSim.worldPosition( new Point(10,500) );
 			playerSim.SetPosition( new Point( 10,500 ) );
 			
+			currentLevel = new Level(levelData0,collisionManager,playerSim);
 
+			
+			
 			onResize( null );
 			addEventListener(Event.RESIZE, onResize );
  			addEventListener(Event.ENTER_FRAME, onEnterFrame );
@@ -162,7 +162,7 @@ package
 			currentLevel.update(playerSim.worldPosition);
 			collisionManager.update(playerSim,currentLevel.activeObjects);		// dispatches CollisionEvents
 			
-			screenContainer.update( playerSim.getBounds().left );
+			screenContainer.update( playerSim.getBounds().topLeft );
 
 			//trace( playerSim.moveState == PlayerSim.MOVESTATE_WALKING ? "walk" : "jump" );
 		}

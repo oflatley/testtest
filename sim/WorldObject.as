@@ -29,8 +29,16 @@ package sim
 			debugBounds.graphics.drawRect(r.x, r.y, r.width, r.height );
 		}
 
+		public function get isMonster() : Boolean {
+			return objData.isMonster;
+		}
+		
 		public function get isConsumable() : Boolean {
 			return objData.isConsumable;
+		}
+		
+		public function get isCollideableFromBelow() : Boolean {
+			return objData.isCollideableFromBelow;
 		}
 		
 		public function onCollision( player : PlayerSim ) : void {
@@ -110,7 +118,6 @@ package sim
 			var mc:MovieClip;
 			
 			switch(type) {		
-				case "Player" : return new Player() ; break;
 				case "SpringBoard": return new SpringBoard(); break;
 				case "Brain":	return new Brain(); break;
 				case "SpeedBoostCoin": return new SpeedBoostCoin(); break;
@@ -179,11 +186,12 @@ import util.Vector2;
 interface IWorldObjectData {
 	function setProps( props:Object ) : void ;
 	function getYat( x:Number ) : Number;
-	//function testCollision( r : Rectangle ) : Boolean;
 	function testCollision( r: Rectangle ) : CollisionResult;
 	function update() : Point;
 	function onCollision( player : PlayerSim ) : void;
-	function get isConsumable() : Boolean;	
+	function get isConsumable() : Boolean;
+	function get isMonster() : Boolean;
+	function get isCollideableFromBelow() : Boolean;
 }
 
 
@@ -208,6 +216,14 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObjectData {
 		return false;
 	}
 	
+	public function get isMonster() : Boolean {
+		return false;
+	}
+	
+	public function get isCollideableFromBelow() : Boolean {
+		return true;
+	}
+	
 	public function onCollision(player:PlayerSim):void
 	{
 	}
@@ -229,17 +245,15 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObjectData {
 	public function testCollision( r: Rectangle ) : CollisionResult {
 
 		var b : Boolean = getBounds().intersects(r)	;		
-		var msv : Vector2 = CollisionManager.SAT( r, getBounds() );
+		var msv : Vector2 = CollisionManager.SAT_rectXrect( r, getBounds() );
 				
 		if( msv ) {
 			
 			var code :int  = 0;
 			return new CollisionResult( code, msv) ;
 			// dispatchEvent( new CollisionEvent( CollisionEvent.PLAYERxWORLD, new CollisionResult( code, _collisionImpulse, null) ) );
-			//return true;
 		}
 		return null;
-		//return false;	
 	}
 }
 
@@ -319,6 +333,9 @@ class ElevatorPlatform extends WorldObjSimBase implements IWorldObjectData {
 		return new Point( 0, delta );
 	}
 
+	override public function get isCollideableFromBelow() : Boolean {
+		return false;
+	}
 }
 
 class EnemyBlob extends WorldObjSimBase implements IWorldObjectData {
@@ -335,7 +352,11 @@ class EnemyBlob extends WorldObjSimBase implements IWorldObjectData {
 		pImpulse = new Point();
 		dir = -1;		// start walking left
 	}
-	
+		
+	override public function get isMonster() : Boolean {
+		return true;
+	}
+		
 	override public function update():Point
 	{
 		pImpulse.x = computeImpulseX();
@@ -394,6 +415,7 @@ class SlopedPlatformData extends WorldObjSimBase implements IWorldObjectData {
 	private var slope : Number;
 	private var rotationAngle : Number;
 	private var _verts : Array;
+	private var _center : Point;
 	private var buildVerts : Function;
 	
 	public function SlopedPlatformData( type : String , mc : MovieClip ) {
@@ -402,7 +424,7 @@ class SlopedPlatformData extends WorldObjSimBase implements IWorldObjectData {
 		
 		_verts = new Array(4);
 		for( var i : int = 0; i < 4; ++i ) {
-			_verts[i] = new Point();
+			_verts[i] = new Vector2();
 		}
 		
 		var re : RegExp = /_\d+/;
@@ -427,21 +449,39 @@ class SlopedPlatformData extends WorldObjSimBase implements IWorldObjectData {
 			sliceHeight = mc.height;
 		}
 		
+		_center = new Point();
+		computeCenter();
 		buildVerts();
 		slope = computeSlope();		// must call buildVerts at least once before computeSlop is valid				
 	}
 	
-	
-		
-	override public function getYat( x : Number ) : Number {
-		
-		return (x - _verts[VERT_INDEX_UL].x) * slope + _verts[VERT_INDEX_UL].y; 
+	private function computeCenter( ) : void {		
+		var r : Rectangle = getBounds();		
+		_center.x = (r.left + r.right) / 2;
+		_center.y = (r.top  + r.bottom ) / 2;
+	}
+			
+	override public function getYat( x : Number ) : Number {		
+		return (x - _verts[VERT_INDEX_UL].x + _center.x) * slope + _verts[VERT_INDEX_UL].y + _center.y; 
 	}
 	
-	//override public function testCollision( r : Rectangle ) : Boolean { 
-/*
 	override public function testCollision( r : Rectangle ) : CollisionResult {
 		
+		//var b : Boolean = getBounds().intersects(r)	;		
+		
+		computeCenter();
+		buildVerts();
+		
+		var msv : Vector2 = CollisionManager.SAT_rectXverts( r, _center, _verts );
+		
+		if( msv ) {
+  			var dummycode :int  = 0;
+			return new CollisionResult( dummycode, msv) ;
+			// dispatchEvent( new CollisionEvent( CollisionEvent.PLAYERxWORLD, new CollisionResult( code, _collisionImpulse, null) ) );
+		}
+		return null;
+		
+/*		
 		var code : int = 0;
 		
 		buildVerts();
@@ -483,32 +523,33 @@ class SlopedPlatformData extends WorldObjSimBase implements IWorldObjectData {
 		}
 trace('nope');
 		return null;	
+*/		
 	}	
-*/	
+	
 	private function computeSlope( ) : Number {
 		return (_verts[VERT_INDEX_UR].y - _verts[VERT_INDEX_UL].y) / (_verts[VERT_INDEX_UR].x - _verts[VERT_INDEX_UL].x);
 	} 
 	
 	private function buildVerts_descendingPlatform() : void {
-		_verts[VERT_INDEX_UL].x = _mc.x;
-		_verts[VERT_INDEX_UL].y = _mc.y;
-		_verts[VERT_INDEX_UR].x = _mc.x + _mc.width;
-		_verts[VERT_INDEX_UR].y = _mc.y + _mc.height - sliceHeight;
-		_verts[VERT_INDEX_LR].x = _mc.x + _mc.width;
-		_verts[VERT_INDEX_LR].y = _mc.y + _mc.height;
-		_verts[VERT_INDEX_LL].x = _mc.x;
-		_verts[VERT_INDEX_LL].y = _mc.y + sliceHeight;
+		_verts[VERT_INDEX_UL].x = _mc.x - _center.x;
+		_verts[VERT_INDEX_UL].y = _mc.y - _center.y;
+		_verts[VERT_INDEX_UR].x = _mc.x + _mc.width - _center.x;
+		_verts[VERT_INDEX_UR].y = _mc.y + _mc.height - sliceHeight - _center.y;
+		_verts[VERT_INDEX_LR].x = _mc.x + _mc.width - _center.x;
+		_verts[VERT_INDEX_LR].y = _mc.y + _mc.height - _center.y;
+		_verts[VERT_INDEX_LL].x = _mc.x - _center.x;
+		_verts[VERT_INDEX_LL].y = _mc.y + sliceHeight - _center.y;
 	}
 	
 	private function buildVerts_ascendingPlatform() : void {
-		_verts[VERT_INDEX_UL].x = _mc.x;
-		_verts[VERT_INDEX_UL].y = _mc.y + _mc.height - sliceHeight;
-		_verts[VERT_INDEX_UR].x = _mc.x + _mc.width;
-		_verts[VERT_INDEX_UR].y = _mc.y;
-		_verts[VERT_INDEX_LR].x = _mc.x + _mc.width;
-		_verts[VERT_INDEX_LR].y = _mc.y + sliceHeight;
-		_verts[VERT_INDEX_LL].x = _mc.x;
-		_verts[VERT_INDEX_LL].y = _mc.y + _mc.height;		
+		_verts[VERT_INDEX_UL].x = _mc.x - _center.x;
+		_verts[VERT_INDEX_UL].y = _mc.y + _mc.height - sliceHeight - _center.y;
+		_verts[VERT_INDEX_UR].x = _mc.x + _mc.width - _center.x;
+		_verts[VERT_INDEX_UR].y = _mc.y - _center.y;
+		_verts[VERT_INDEX_LR].x = _mc.x + _mc.width - _center.x;
+		_verts[VERT_INDEX_LR].y = _mc.y + sliceHeight - _center.y;
+		_verts[VERT_INDEX_LL].x = _mc.x - _center.x;
+		_verts[VERT_INDEX_LL].y = _mc.y + _mc.height - _center.y;		
 	}
 	
 	

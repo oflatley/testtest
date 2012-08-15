@@ -38,7 +38,7 @@ package views
 		
 		public function getBounds() : Rectangle {
 			//player mc has registration point in lower right -- we fix it up so that the bounds is as if registration is upperleft (like our world objects)
-			return new Rectangle( mc.x, mc.y - mc.height, mc.width, mc.height );	
+			return new Rectangle( mc.x - mc.width/2, mc.y - mc.height, mc.width, mc.height );	
 		}
 	}
 }
