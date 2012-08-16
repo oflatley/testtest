@@ -22,40 +22,36 @@ package sim
 	
 	public class PlayerSim extends EventDispatcher
 	{
-		public static const MOVESTATE_WALKING : int = 1;
-		public static const MOVESTATE_JUMPING : int = 2; 
-
 		private var playerController : Controller;
-
 		private var _worldPosition:Point = new Point();
 		private var velocityX:Number = 0;
 		private static const terminalVelocity:Number = 6;		// TODO percentage
 		private var velocity:Point = new Point();
 		private var gravity:Number;
 		private var view:PlayerView;
-		private var _moveState : int;
-		private var blHadGroundCollisionThisFrame : Boolean = false;
 		private var _nCoins : int;
 		private var _speedMultiplier : Number = 1.0;
 		private var _isCollideable : Boolean = true;
+		private var _dragX:Number = 2;
+		private var _objectCurrentlyUnderfoot:WorldObject = null;
 		
 		public function PlayerSim( controller:Controller, velX:Number, _gravity:Number, _playerView:PlayerView, _collisionMgr : CollisionManager )
 		{
 			super(null);
 			reset();
 				
-			_moveState = MOVESTATE_WALKING;
 			velocityX = velX;
-			gravity = _gravity;
-			
-			view = _playerView;
-			
+			gravity = _gravity;			
+			view = _playerView;			
 			playerController = controller;
-			playerController.addEventListener(ControllerEvent.JUMP, onJump );
-		
+			
+			playerController.addEventListener(ControllerEvent.JUMP, onJump );		
 			_collisionMgr.addEventListener(CollisionEvent.PLAYERxWORLD, onCollision_playerVsWorld );
 		}
 		
+		private function get canJump() : Boolean {
+			return _objectCurrentlyUnderfoot && _isCollideable;
+		}
 
 		private function reset(): void {
 			_nCoins = 0;
@@ -64,6 +60,16 @@ package sim
 		public function addCoins( n : int ) : void {
 			_nCoins += n;
 		}
+		
+		public function scale( n : Number, duration : Number ) : void {
+ 			view.scale( n );
+			setInterval( restoreNormalScale, duration );
+		}
+		
+		private function restoreNormalScale() : void  {
+			view.scale( 1 );
+		}
+		
 		
 		public function addSpeedBoost( duration_ms : int, speedMultiplier : Number ) : void {
 			_speedMultiplier = speedMultiplier;
@@ -79,79 +85,81 @@ package sim
 			_speedMultiplier = 1;
 		}
 		
-		public function get moveState():int
-		{
-			return _moveState;
-		}
-		
 		public function getBounds() : Rectangle {
 			return view.getBounds();
 		}
 		
 		public function Update() : void {
- 			_moveState = MOVESTATE_JUMPING;  // set to walking in onCollision_playerxWorld is collision with ground, otherwise assume jumping each frame
-			blHadGroundCollisionThisFrame = false;			
 			var pos:Vector2 = new Vector2();
-			
-			pos.x += velocityX * _speedMultiplier;
+			pos.x += velocity.x * _speedMultiplier;
+
+			velocity.x -= _dragX;
+			if( velocity.x < velocityX ) {
+				velocity.x = velocityX;
+			}
 			
 			velocity.y += gravity;
 			if( velocity.y > terminalVelocity ) {
 				velocity.y = terminalVelocity;
 			}
 						
-			pos.y += velocity.y;
-			
+			pos.y += velocity.y;			
 			move( pos ); 		
-		}
 		
+			_objectCurrentlyUnderfoot = null; // clear for next time through. note that collision detection will occur before next call to PlayerSim.update
+		}
 
-		private function move( v:Vector2 ) : void {
-			
+		private function move( v:Vector2 ) : void {			
 			worldPosition = new Point( v.x + worldPosition.x, v.y + worldPosition.y);
 		}
 		
 		private function onJump( e:Event ) : void {
-			velocity.y -= 25;
-			_moveState = MOVESTATE_JUMPING;
+			if( canJump ) {
+				velocity.y -= 25;
+			}
+			else {
+				trace('jump denied');
+			}
 		}
 
-		private function onCollision_playerVsWorld( collisionEvent : CollisionEvent ) : void {
+		private function applyCollision( cr : CollisionResult ) : void {
+ 			var wo : WorldObject = cr.collidedObj;
+			var v : Vector2 = cr.msv;
 			
-			if( _isCollideable ) {
+			if( v.y < 0 ) {
+				_objectCurrentlyUnderfoot = wo;
+			}
 			
-				var cr : CollisionResult = collisionEvent.collisionResult;
-				var wo : WorldObject = cr.collidedObj;
-				var v : Vector2 = cr.msv;
+			if( wo.isMonster ) {
 				
-				if( wo.isMonster ) {
+				if( v.y < 0 && -v.y > Math.abs(v.x) ) {
+					// player hit monster from above --> Kill the monster
+					dispatchEvent( new RemoveFromWorldEvent( RemoveFromWorldEvent.REMOVE_FROM_WORLD, wo ) );
+					velocity.y -= 20;
+				}
+				else {
+					// player hit monster from the side or from below --> penalize player
+					//trace('from side or below');
+					_isCollideable = false;
+					setInterval( restoreCollisionEnabled, 1000 );
+				}
+			}
+			else
+			{
+				var bCollisionFromBelow : Boolean = v.y > 0;
+				
+				if( bCollisionFromBelow && !wo.isCollideableFromBelow ) {
+					
+				}
+				else {
+					move( v );
+					cr.collidedObj.onCollision( this );			
+				}
+			}
+		}
 		
-					if( v.y < 0 && -v.y > Math.abs(v.x) ) {
-						// player hit monster from above --> Kill the monster
-						dispatchEvent( new RemoveFromWorldEvent( RemoveFromWorldEvent.REMOVE_FROM_WORLD, wo ) );
-						velocity.y -= 20;
-					}
-					else {
-						// player hit monster from the side or from below --> penalize player
-						trace('from side or below');
-						_isCollideable = false;
-						setInterval( restoreCollisionEnabled, 1000 );
-					}
-				}
-				else
-				{
-					var bCollisionFromBelow : Boolean = v.y > 0;
-					
-					if( bCollisionFromBelow && !wo.isCollideableFromBelow ) {
-					
-					}
-					else {
-						move( v );
-						collisionEvent.collisionResult.collidedObj.onCollision( this );			
-					}
-				}
-			}			
-
+		private function onCollision_playerVsWorld( collisionEvent : CollisionEvent ) : void {		
+			applyCollision( collisionEvent.collisionResult );		
 		}
 		
 		private function restoreCollisionEnabled():void
@@ -168,12 +176,10 @@ package sim
 		{
 			_worldPosition = value;
 			view.SetPosition( value );
-
 		}
 		
 		public function SetPosition( value:Point) : void {
 			worldPosition = value;
 		}
-		
 	}
 }

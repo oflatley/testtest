@@ -40,5 +40,10 @@ package views
 			//player mc has registration point in lower right -- we fix it up so that the bounds is as if registration is upperleft (like our world objects)
 			return new Rectangle( mc.x - mc.width/2, mc.y - mc.height, mc.width, mc.height );	
 		}
+		
+		public function scale( n : Number ) : void {
+			mc.scaleX = n;
+			mc.scaleY = n; 
+		}
 	}
 }

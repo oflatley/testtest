@@ -278,10 +278,8 @@ package util
 			}
 			
 			public static function SAT_rectXverts( rA : Rectangle, centerB : Point, vertsB : Array ) : Vector2 {
-
 				var vertsA:Vector.<Vector2> = buildVertArray( rA ); 
 				var centerA : Point = center(rA);
-				
 				
 				// TODO: fix, should not do this copy to vector from array. fix callers to pass in vectors
 				var _vertsB : Vector.<Vector2> = new Vector.<Vector2>();
@@ -289,11 +287,22 @@ package util
 				{
 					_vertsB.push(p);	
 				}
-				
-				
 				return SAT_vertsXverts( centerA, vertsA, centerB, _vertsB );
-
 			}
+
+			public static function SAT_vertsXrect( centerB : Point, vertsB : Array, rA : Rectangle ) : Vector2 {
+				var vertsA:Vector.<Vector2> = buildVertArray( rA ); 
+				var centerA : Point = center(rA);
+				
+				// TODO: fix, should not do this copy to vector from array. fix callers to pass in vectors
+				var _vertsB : Vector.<Vector2> = new Vector.<Vector2>();
+				for each (var p:Vector2 in vertsB) 
+				{
+					_vertsB.push(p);	
+				}
+				return SAT_vertsXverts( centerA, vertsA, centerB, _vertsB );
+			}
+			
 			
 			
 			public static function SAT_rectXrect( polygon1 : Rectangle, polygon2 : Rectangle ) : Vector2 {

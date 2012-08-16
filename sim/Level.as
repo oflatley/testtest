@@ -11,6 +11,8 @@ package sim
 	import flash.net.URLRequest;
 	import flash.system.ApplicationDomain;
 	
+	import levels.LevelFactory;
+	
 	import sim.WorldObject;
 	
 	import util.CollisionManager;
@@ -32,8 +34,9 @@ package sim
 		private var _ndxCurrentScreenSlice : int;
 		private var _objectsToRemove : Array;
 	
-		public function Level(_data:Object, _collisionMgr : CollisionManager, playerSim : PlayerSim)
+		public function Level( sLevelName : String, _collisionMgr : CollisionManager, playerSim : PlayerSim)
 		{
+			
 			_scrollSignaled = false;
 			
 			_collisionMgr.addEventListener( CollisionEvent.PLAYERxWORLD, onPlayerxWorldCollision );
@@ -53,7 +56,8 @@ package sim
 			// find max x
 			var maxX : int = 0;
 			var maxX0 : int = 0;
-			for each( var elem:Object in _data ) {
+			var data : Array = new LevelFactory().GetLevel( sLevelName ).data;
+			for each( var elem:Object in data ) {
 				
 				if( null == typeWidths[elem.type] ) {
 					typeWidths[elem.type] = ObjectPool.Instance().getProp( elem.type, "width" ) as Number;
@@ -81,7 +85,7 @@ package sim
 				buckets_endX.push( new Array() );
 			}
 			
-			for each ( var elem2:Object in _data ) {			
+			for each ( var elem2:Object in data ) {			
 				var info : ObjBucketInfo = new ObjBucketInfo( elem2.type, elem2.x, elem2.y, elem2.x + typeWidths[elem2.type], elem2.props );			
 				var nWhichBucket : int = elem2.x / bucketWidth;
 				buckets_startX[nWhichBucket].push( info );				

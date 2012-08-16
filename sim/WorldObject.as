@@ -22,7 +22,12 @@ package sim
 		{
 			type = _type;
 			mc = createMC(type);
-			objData = createWorldObjData( type, mc );		
+			objData = createWorldObjData( type, mc );	
+			
+			if( null == objData ) {
+				trace("ERROR, could not create objData for: " + type );
+			}
+			
 			debugBounds = new Sprite();
 			debugBounds.graphics.lineStyle(2, 0x0000FF);
 			var r : Rectangle = GetBounds();
@@ -73,7 +78,7 @@ package sim
 		public function update() : void {
 				
 			
-			var pImpulse : Point = objData.update();
+ 			var pImpulse : Point = objData.update();
 			if ( pImpulse ) {
 				mc.x += pImpulse.x;
 				mc.y += pImpulse.y;		
@@ -115,9 +120,16 @@ package sim
 		
 		private function createMC(type:String):MovieClip
 		{	
+			// TODO  flash.utils::getDefinitionByName()
+			
 			var mc:MovieClip;
 			
-			switch(type) {		
+			switch(type) {	
+				case "Catapult": return new Catapult(); break;
+				case "Trampoline": return new Trampoline(); break;
+				case "Launcher": return new Launcher(); break;
+				case "Token_MakePlayerBigger": return new Token_MakePlayerBigger(); break;
+				case "Token_MakePlayerSmaller": return new Token_MakePlayerSmaller(); break;  
 				case "SpringBoard": return new SpringBoard(); break;
 				case "Brain":	return new Brain(); break;
 				case "SpeedBoostCoin": return new SpeedBoostCoin(); break;
@@ -139,6 +151,11 @@ package sim
 		private function createWorldObjData( type:String, mc:MovieClip ) : IWorldObjectData {
 
 			switch(type) {	
+				case "Launcher": return new LauncherSim(mc);
+				case "Catapult": return new CatapultSim(mc);
+				case "Trampoline": return new TrampolineSim(mc);
+				case "Token_MakePlayerBigger": return new Token_MakePlayerBiggerSim(mc);
+				case "Token_MakePlayerSmaller": return new Token_MakePlayerSmallerSim(mc);							
 				case "SpringBoard": return new SpringBoardSim(mc);
 				case "SpeedBoostCoin":
 					return new SpeedBoostCoinSim( mc ); 
@@ -251,10 +268,51 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObjectData {
 			
 			var code :int  = 0;
 			return new CollisionResult( code, msv) ;
-			// dispatchEvent( new CollisionEvent( CollisionEvent.PLAYERxWORLD, new CollisionResult( code, _collisionImpulse, null) ) );
 		}
 		return null;
 	}
+}
+
+class LauncherSim extends WorldObjSimBase {
+	private static const IMPULSE_Y : int = -40;
+	
+	public function LauncherSim( mc : MovieClip ) {		
+		super(mc)
+	}
+	
+	override public function onCollision( player:PlayerSim ) : void {
+		
+		player.applyImpulse( new Point( 0, IMPULSE_Y ) );
+	}				
+}
+
+class TrampolineSim extends WorldObjSimBase {
+
+	private static const VELOCITY_X : Number = 0;
+	private static const VELOCITY_Y : Number = -20;
+	
+	public function TrampolineSim( mc : MovieClip ) {
+		super( mc );	
+	}
+	
+	override public function onCollision( player:PlayerSim ) : void {
+		player.applyImpulse( new Point( VELOCITY_X, VELOCITY_Y ) );
+	}	
+}
+ 
+class CatapultSim extends WorldObjSimBase {
+	
+	private static const VELOCITY_X : Number = 36;  
+	private static const VELOCITY_Y : Number = -34;
+	
+	public function CatapultSim( mc : MovieClip ) {
+		super( mc );	
+	}
+	
+	override public function onCollision( player:PlayerSim ) : void {
+		player.applyImpulse( new Point( VELOCITY_X, VELOCITY_Y ) );
+	}
+	
 }
 
 class SpringBoardSim extends WorldObjSimBase {
@@ -271,7 +329,7 @@ class SpringBoardSim extends WorldObjSimBase {
 	}			
 }
 
-class SpeedBoostCoinSim extends WorldObjSimBase implements IWorldObjectData {
+class SpeedBoostCoinSim extends WorldObjSimBase  {
 	
 	private static const DURATION_MS : int = 3000;
 	private static const SPEED_MULTIPLIER : Number = 2;
@@ -292,7 +350,50 @@ class SpeedBoostCoinSim extends WorldObjSimBase implements IWorldObjectData {
 	}
 }
 
-class BrainCoin extends WorldObjSimBase implements IWorldObjectData {
+class Token_MakePlayerBiggerSim extends WorldObjSimBase {
+
+	private static const DURATION_MS : int = 5000;
+	private static const SCALE_TO_APPLY : Number = 1.50;
+	
+	public function Token_MakePlayerBiggerSim(mc:MovieClip) {
+		super(mc);
+	}
+	
+	override public function get isConsumable():Boolean
+	{
+		return true;
+	}
+	
+	override public function onCollision(player:PlayerSim):void
+	{
+		player.scale( SCALE_TO_APPLY, DURATION_MS  );		
+	}
+	
+}
+
+class Token_MakePlayerSmallerSim extends WorldObjSimBase {
+	
+	private static const DURATION_MS : int = 5000;
+	private static const SCALE_TO_APPLY : Number = 0.5;
+	
+	public function Token_MakePlayerSmallerSim(mc:MovieClip) {
+		super(mc);
+	}
+	
+	override public function get isConsumable():Boolean
+	{
+		return true;
+	}
+	
+	override public function onCollision(player:PlayerSim):void
+	{
+		player.scale( SCALE_TO_APPLY, DURATION_MS );	
+	}
+	
+}
+
+
+class BrainCoin extends WorldObjSimBase  {
 	
 	private static const BRAIN_COIN_VALUE : int = 1;
 	
@@ -311,7 +412,7 @@ class BrainCoin extends WorldObjSimBase implements IWorldObjectData {
 }
 
 
-class ElevatorPlatform extends WorldObjSimBase implements IWorldObjectData {
+class ElevatorPlatform extends WorldObjSimBase  {
 
 	private var theta : Number;
 	private var lastY : Number;
@@ -338,7 +439,7 @@ class ElevatorPlatform extends WorldObjSimBase implements IWorldObjectData {
 	}
 }
 
-class EnemyBlob extends WorldObjSimBase implements IWorldObjectData {
+class EnemyBlob extends WorldObjSimBase  {
 
 	private static const VELOCITY_X : Number = 1;
 	
@@ -396,14 +497,14 @@ class EnemyBlob extends WorldObjSimBase implements IWorldObjectData {
 
 }
 
-class LevelPlatformData extends WorldObjSimBase implements IWorldObjectData {
+class LevelPlatformData extends WorldObjSimBase  {
 	
 	public function LevelPlatformData( mc : MovieClip ) {		
 		super(mc);
 	}		
 }
 
-class SlopedPlatformData extends WorldObjSimBase implements IWorldObjectData {
+class SlopedPlatformData extends WorldObjSimBase {
 
 	private static const VERT_INDEX_UL : int = 0;
 	private static const VERT_INDEX_UR : int = 1;
@@ -465,14 +566,14 @@ class SlopedPlatformData extends WorldObjSimBase implements IWorldObjectData {
 		return (x - _verts[VERT_INDEX_UL].x + _center.x) * slope + _verts[VERT_INDEX_UL].y + _center.y; 
 	}
 	
-	override public function testCollision( r : Rectangle ) : CollisionResult {
+ 	override public function testCollision( r : Rectangle ) : CollisionResult {
 		
 		//var b : Boolean = getBounds().intersects(r)	;		
 		
 		computeCenter();
 		buildVerts();
 		
-		var msv : Vector2 = CollisionManager.SAT_rectXverts( r, _center, _verts );
+		var msv : Vector2 = CollisionManager.SAT_vertsXrect( _center, _verts, r );
 		
 		if( msv ) {
   			var dummycode :int  = 0;
