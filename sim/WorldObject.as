@@ -261,7 +261,14 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObjectData {
 	
 	public function testCollision( r: Rectangle ) : CollisionResult {
 
-		var b : Boolean = getBounds().intersects(r)	;		
+		var cr : CollisionResult = CollisionManager.SAT_rxr( r, getBounds(), new Vector2(0,0) );
+		
+		if( cr.Intersect ) {
+			return cr;
+		}
+		return null;
+	}
+/*
 		var msv : Vector2 = CollisionManager.SAT_rectXrect( r, getBounds() );
 				
 		if( msv ) {
@@ -271,6 +278,7 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObjectData {
 		}
 		return null;
 	}
+*/		
 }
 
 class LauncherSim extends WorldObjSimBase {
@@ -572,6 +580,21 @@ class SlopedPlatformData extends WorldObjSimBase {
 		
 		computeCenter();
 		buildVerts();
+		
+		var vect : Vector.<Vector2> = new Vector.<Vector2>();
+		
+		for( var i:int = 0; i < 4; ++i ) {
+			vect[i] = _verts[i];
+		}
+		
+		
+		var cr : CollisionResult = CollisionManager.SAT_rxv( r, vect, new Vector2(0,0) );
+		
+		if( cr.Intersect ) {
+			return cr;
+		}
+		return null;
+		
 		
 		var msv : Vector2 = CollisionManager.SAT_vertsXrect( _center, _verts, r );
 		

@@ -15,6 +15,10 @@ package util
 		private var _minSeperatingVector:Vector2;
 		private var _collidedObj:WorldObject;
 		
+		public var Intersect : Boolean;
+		public var WillIntersect : Boolean;
+		
+		
 		public function CollisionResult( code:Number = 0 , impulse:Vector2 = null, obj:WorldObject = null )
 		{
 			init( code, impulse, obj );

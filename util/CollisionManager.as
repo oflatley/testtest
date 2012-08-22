@@ -13,8 +13,6 @@ package util
 	
 	public class CollisionManager  extends EventDispatcher
 	{
-		
-		
 		public function CollisionManager() {
 		}
 
@@ -189,6 +187,18 @@ package util
 			
 			return new Point( x, y ) ;
 		}
+		
+		private static function centerOfVerts( a : Vector.<Vector2> ) : Point { 
+			var xTotal : Number = 0;
+			var yTotal : Number = 0;
+			
+			for ( var i : int = 0; i < 4; ++i ) {
+				xTotal += a[i].x;
+				yTotal += a[i].y;
+			}
+			
+			return new Point( xTotal/4, yTotal/4 );
+		}
 
 			private static function buildVertArray( r : Rectangle ) : Vector.<Vector2> {
 				var verts:Vector.<Vector2> = new Vector.<Vector2>();
@@ -313,82 +323,7 @@ package util
 				var center1 : Point = center(polygon1);
 				var center2 : Point = center(polygon2) ;
 
-				return SAT_vertsXverts( center1, verts1, center2, verts2 ); 
-				
-/*				
-				var test1:Number;// numbers to use to test for overlap
-				var test2:Number;
-				var testNum:Number; // number to test if its the new max/min
-				var min1:Number; //current smallest(shape 1)
-				var max1:Number;//current largest(shape 1)
-				var min2:Number;//current smallest(shape 2)
-				var max2:Number;//current largest(shape 2)
-				var axis:Vector2;//the normal axis for projection
-				var offset:Number;
-				var vectorOffset:Vector2;
-				var vectors1:Vector.<Vector2>;//the points
-				var vectors2:Vector.<Vector2>;//the points
-				vectors1 = buildVertArray( polygon1 ); //.vertices.concat();//these functions are in my polygon class, all they do is return a Vector.<Vector2D> of the vertices of the polygon
-				vectors2 = buildVertArray (polygon2) ; //.vertices.concat();
-				
-				var msv : Vector2;
-				var msvMagnitudeSquared : Number = Infinity;
-								
-				// find vertical offset				
-				var center1 : Point = center(polygon1);
-				var center2 : Point = center(polygon2) ;
-				vectorOffset= new Vector2(center1.x - center2.x, center1.y - center2.y);
-				
-				// loop to begin projection
-				for (var i:int = 0; i < vectors1.length; i++) {
-					// get the normal axis, and begin projection
-					axis = findNormalAxis(vectors1, i);
-					
-					// project polygon1
-					min1 = axis.dot(vectors1[0]);
-					max1 = min1;//set max and min equal
-					
-					for (var j:int = 1; j < vectors1.length; j++) {
-						testNum = axis.dot(vectors1[j]);//project each point
-						if (testNum < min1) min1 = testNum;//test for new smallest
-						if (testNum > max1) max1 = testNum;//test for new largest
-					}
-					
-					// project polygon2
-					min2 = axis.dot(vectors2[0]);
-					max2 = min2;//set 2's max and min
-					
-					for (j = 1; j < vectors2.length; j++) {
-						testNum = axis.dot(vectors2[j]);//project the point
-						if (testNum < min2) min2 = testNum;//test for new min
-						if (testNum > max2) max2 = testNum;//test for new max
-					}
-					
-					// apply the offset to each max/min(no need for each point, max and min are all that matter)
-					offset = axis.dot(vectorOffset);//calculate offset
-					min1 += offset;//apply offset
-					max1 += offset;//apply offset
-					
-					// and test if they are touching
-					test1 = min1 - max2;//test min1 and max2
-					test2 = min2 - max1;//test min2 and max1
-					if(test1 > 0 || test2 > 0){//if they are greater than 0, there is a gap
-						return null;//just quit
-					}
-				
-					var vThisSV : Vector2 = new Vector2(axis.x*((max2-min1)*-1) , axis.y*((max2-min1)*-1) );
-					var vThisSVMagnitudeSquared : Number = vThisSV.magnitudeSquared();
-					
-					if( vThisSVMagnitudeSquared < msvMagnitudeSquared ){
-						msvMagnitudeSquared = vThisSVMagnitudeSquared;
-						msv = vThisSV;
-					}					
-				}
-				
-				//if you're here, there is a collision
-				msv.negate();
-				return msv;
-*/				
+				return SAT_vertsXverts( center1, verts1, center2, verts2 ); 				
 			}	
 			
 			
@@ -400,9 +335,170 @@ package util
 				normalAxis.normalize();//normalize the line(set its length to 1)
 				return normalAxis;
 			}
-	
-	}
+			
+			////////////////////
+			// Calculate the projection of a polygon on an axis
+			// and returns it as a [min, max] interval
+			//public static function ProjectPolygon( axis : Vector2, polygon : Rectangle, min : Number, max : Number) : void {
+			public static function ProjectPolygon( axis : Vector2, verts : Vector.<Vector2>, min : Number, max : Number ) : void {
+			// To project a point on an axis use the dot product
+/*				
+				var vert: Array = new Array(4);
 
+				for( var i :int = 0; i < 4; ++i ) {
+					vert[i] = new Vector2();
+				}
+				
+				vert[0].setValueFromPoint( polygon.topLeft ) ;
+				vert[1].setValue( polygon.right, polygon.top );
+				vert[2].setValueFromPoint( polygon.bottomRight );
+				vert[3].setValue( polygon.left, polygon.bottom );
+*/				
+			//	var vert : Array  = verts; 
+				
+				
+				var dotProduct : Number = axis.dot(verts[0]);
+				min = dotProduct;
+				max = dotProduct;
+				for ( var i : int = 0; i < 4; i++) {
+					dotProduct = verts[i].dot(axis);
+					if (dotProduct < min) {
+						min = dotProduct;
+					} else {
+						if (dotProduct> max) {
+							max = dotProduct;
+						}
+					}
+				}
+			}
+
+			// Calculate the distance between [minA, maxA] and [minB, maxB]
+			// The distance will be negative if the intervals overlap
+			public static function IntervalDistance( minA : Number, maxA : Number, minB : Number, maxB : Number) : Number{
+				if (minA < minB) {
+					return minB - maxA;
+				} else {
+					return minA - maxB;
+				}
+			}
+			
+			private static function buildEdges( verts : Vector.<Vector2> ) : Array {
+				
+				var e : Array = new Array();
+				
+				for( var i : int = 0; i < 4; ++i ) {
+					var vA : Vector2 = verts[i];
+					var vB : Vector2 = verts[(i+1)%4];
+					e.push( Vector2.subtract(vA,vB) );				
+				}
+				return e;
+			}
+			
+			// Check if polygon A is going to collide with polygon B.
+			// The last parameter is the *relative* velocity
+			// of the polygons (i.e. velocityA - velocityB)
+			//public static function PolygonCollision( polygonA : Rectangle, polygonB : Rectangle , velocity : Vector2) : CollisionResult {
+			public static function SAT_vxv( ctrA : Point, vertA : Vector.<Vector2>, ctrB : Point, vertB : Vector.<Vector2>, velocity : Vector2 ) : CollisionResult {	
+				
+				var result : CollisionResult = new CollisionResult();
+				result.Intersect = true;
+				result.WillIntersect = true;
+				
+				var edgeCountA : int = 4; //polygonA.Edges.Count;
+				var edgeCountB : int = 4; //polygonB.Edges.Count;
+				var minIntervalDistance : Number = Infinity;
+				var translationAxis : Vector2 = new Vector2();
+				var edge : Vector2;
+				
+				var edgesA : Array = buildEdges(vertA);
+				var edgesB : Array = buildEdges(vertB);
+									
+				// Loop through all the edges of both polygons
+				for (var edgeIndex:int = 0; edgeIndex < edgeCountA + edgeCountB; edgeIndex++) {
+					if (edgeIndex < edgeCountA) {
+						edge = edgesA[edgeIndex];
+					} else {
+						edge = edgesB[edgeIndex - edgeCountA];
+					}
+					
+					// ===== 1. Find if the polygons are currently intersecting =====
+					
+					// Find the axis perpendicular to the current edge
+					var axis : Vector2 = new Vector2(-edge.y, edge.x);
+					axis.normalize();
+					
+					// Find the projection of the polygon on the current axis
+					var minA : Number = 0; var minB : Number = 0; var maxA : Number = 0; var maxB : Number = 0;
+					ProjectPolygon(axis, vertA, minA, maxA); // ProjectPolygon(axis, polygonA, minA, maxA);
+					ProjectPolygon(axis, vertB, minB, maxB); //ProjectPolygon(axis, polygonB, minB, maxB);
+					
+					// Check if the polygon projections are currentlty intersecting
+					if (IntervalDistance(minA, maxA, minB, maxB) > 0) {
+						result.Intersect = false;
+					}	
+					
+					// ===== 2. Now find if the polygons *will* intersect =====
+					
+					// Project the velocity on the current axis
+					var velocityProjection : Number = axis.dot(velocity);
+					
+					// Get the projection of polygon A during the movement
+					if (velocityProjection < 0) {
+						minA += velocityProjection;
+					} else {
+						maxA += velocityProjection;
+					}
+					
+					// Do the same test as above for the new projection
+					var intervalDistance : Number = IntervalDistance(minA, maxA, minB, maxB);
+					if (intervalDistance > 0) result.WillIntersect = false;
+					
+					// If the polygons are not intersecting and won't intersect, exit the loop
+					if (!result.Intersect && !result.WillIntersect) break;
+					
+					// Check if the current interval distance is the minimum one. If so store
+					// the interval distance and the current distance.
+					// This will be used to calculate the minimum translation vector
+					intervalDistance = Math.abs(intervalDistance);
+					if (intervalDistance < minIntervalDistance) {
+						minIntervalDistance = intervalDistance;
+						translationAxis = axis;
+						
+						//ß\var diff : Point = center(polygonA).subtract(center(polygonB));
+						var diff : Point = centerOfVerts(vertA).subtract(centerOfVerts(vertB));
+						var d : Vector2 = new Vector2( diff.x, diff.y );
+						if (d.dot(translationAxis) < 0)
+							translationAxis.negate();
+					}
+				}
+				
+				// The minimum translation vector
+				// can be used to push the polygons appart.
+				if (result.WillIntersect) {
+					translationAxis.scale( minIntervalDistance );
+					result.msv = translationAxis;
+				}
+				return result;
+			}		
+			
+			public static function SAT_rxv( rA : Rectangle , vertB : Vector.<Vector2>, velocity : Vector2 ) : CollisionResult {	
+	
+					var ctrA : Point = center(rA);
+					var vA : Vector.<Vector2> = buildVertArray( rA );
+					var ctrB : Point = centerOfVerts( vertB );
+					return SAT_vxv( ctrA, vA, ctrB, vertB, velocity ); 			
+			}
+			
+			public static function SAT_rxr( rA : Rectangle , rB: Rectangle, velocity : Vector2 ) : CollisionResult {	
+				var ctrA : Point = center(rA);
+				var vA : Vector.<Vector2> = buildVertArray( rA );
+				
+				var ctrB : Point = center(rB);
+				var vB : Vector.<Vector2> = buildVertArray( rB );
+				
+				return SAT_vxv( ctrA, vA, ctrB, vB, velocity ); 						
+			}
+	}
 }
 
 

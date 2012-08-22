@@ -11,6 +11,11 @@ package util
 			_p = new Point( x,y );
 		}
 		
+		public static function subtract( vA : Vector2, vB : Vector2 ) : Vector2{
+			return new Vector2( vB.x - vA.x, vB.y - vA.y );
+		}
+		
+		
 		public function dot( v : Vector2 ) : Number {
 			return _p.x * v.x + _p.y * v.y;
 		}
@@ -45,6 +50,11 @@ package util
 		public function negate() : void {
 			_p.x = -_p.x;
 			_p.y = -_p.y;
+		}
+		
+		public function scale( n : Number ) : void {
+			_p.x *= n;
+			_p.y *= n;
 		}
 		
 		public function normalize() : void {
