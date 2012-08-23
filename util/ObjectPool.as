@@ -2,11 +2,14 @@ package util
 {
 	import events.CollisionEvent;
 	
+	import flash.display.Loader;
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.net.URLRequest;
+	import flash.system.ApplicationDomain;
 	import flash.utils.getDefinitionByName;
 	
 	import interfaces.IWorldObject;
@@ -21,6 +24,10 @@ package util
 		private static var theObjectPool : ObjectPool = null;		
 		private var poolMap : Array;
 		private var activeList : Vector.<PoolObject>;
+
+		private var _hackLoadSwfCompleteCallback : Function;		// for swf based assets
+		private var mcMapping_swf : Array = new Array();			// for swf based assets
+
 		
 		public static function Instance() : ObjectPool {
 			if( null == theObjectPool ) {
@@ -33,8 +40,8 @@ package util
 			poolMap = new Array();
 			activeList = new Vector.<PoolObject>();
 		}
-		
-		public function Initialize(spec:Array, screenContainer : ScreenContainer ) : void {		
+				
+		public function initialize(spec:Array, screenContainer : ScreenContainer ) : void {		
 			
 			for each( var elem : Object in spec ) {
 				
@@ -43,7 +50,7 @@ package util
 				
 				for( var i : int = 0; i < elem.count; ++i ) {
 					
-					var mc : MovieClip = createMC( elem.type );
+					var mc : MovieClip = createMC_swf( elem.type ); //   createMC( elem.type );
 					var iWO : IWorldObject = WorldObjectFactory.Instance().createWorldObject( elem.type, new Rectangle( 0,0,mc.width, mc.height ) );
 					var mcv : MovieClipView = new MovieClipView( screenContainer, iWO, mc );
 					mcv.active = false;
@@ -129,6 +136,37 @@ package util
 					return new MovieClip();
 			}			
 		}	
+		
+		// swf loading support
+		public function buildMovieClipClasses( swfFile : String, cb : Function )  : void {
+			_hackLoadSwfCompleteCallback = cb;
+			var loader:Loader = new Loader();
+			loader.contentLoaderInfo.addEventListener( Event.COMPLETE, onSwfLoadComplete );
+			loader.load( new URLRequest(swfFile) );
+		}
+		
+		//swf loading support
+		private function onSwfLoadComplete(event:Event):void
+		{
+			var aNames : Array = ["Player","Catapult","Trampoline","Launcher","Token_MakePlayerBigger","Token_MakePlayerSmaller", "SpringBoard","Brain","SpeedBoostCoin","Enemy_0","Column","PlatformShort_0","PlatformMedium_0","PlatformLong_0","PlatformMedium_15","PlatformMedium_345"];
+					
+			event.target.removeEventListener( Event.COMPLETE, arguments.callee );
+			var ad:ApplicationDomain = event.target.applicationDomain;
+			
+			for each( var s : String in aNames ) {
+				var Klass : Object = ad.getDefinition( s );
+				mcMapping_swf[s] = Klass;			
+			}
+			mcMapping_swf["PlatformShort_elev"] = mcMapping_swf['PlatformShort_0'];
+			
+			_hackLoadSwfCompleteCallback();
+		}
+		
+		private function createMC_swf( type:String ) : MovieClip {
+			var klass : Class = mcMapping_swf[type];
+			return new klass();
+		}
+
 	}
 }
 import flash.display.MovieClip;
@@ -154,3 +192,6 @@ class PoolObject {
 		
 		
 }
+
+
+

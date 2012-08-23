@@ -11,10 +11,9 @@ package
 	import flash.geom.Vector3D;
 	import flash.net.URLRequest;
 	import flash.system.ApplicationDomain;
-
+	
 	import sim.Level;
 	import sim.PlayerSim;
-
 	
 	import util.CollisionManager;
 	import util.Controller;
@@ -63,17 +62,21 @@ package
 		
 		public function SideScroller()
 		{
-			stage.color = 0x444444;
-			stage.frameRate = 60;
+			super();
 			
 			collisionManager = new CollisionManager();
 			screenContainer = ScreenContainer.Instance();
-			ObjectPool.Instance().Initialize( objPoolAllocs, screenContainer );
 			addChild( screenContainer.container );			
-			startGame();
+			
+			ObjectPool.Instance().buildMovieClipClasses( 'assets/assets.swf', startGame ); // if using swf
+			// swc: startGame();
 		}
 		
 		private function startGame():void{
+			stage.color = 0x444444;
+			stage.frameRate = 60;
+			
+			ObjectPool.Instance().initialize( objPoolAllocs, screenContainer );
 			var playerView : PlayerView = new PlayerView(  );
 			playerView.AddToScene( screenContainer.container );
 			playerSim = new PlayerSim(new Controller(stage), velocityX, gravity, playerView, collisionManager );
