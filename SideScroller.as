@@ -14,7 +14,7 @@ package
 
 	import sim.Level;
 	import sim.PlayerSim;
-	import sim.WorldObject;
+
 	
 	import util.CollisionManager;
 	import util.Controller;

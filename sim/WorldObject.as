@@ -110,12 +110,8 @@ package sim
 			var cr : CollisionResult = objData.testCollision(r);
 			if( cr ) {
 				cr.collidedObj = this;	// TODO, pass iface objData
-				//dispatchEvent( new CollisionEvent( CollisionEvent.PLAYERxWORLD, cr ) );
-				//return true;
 			}
 			return cr;
-			//return false;
-			//return objData.testCollision( r );
 		}
 		
 		private function createMC(type:String):MovieClip
@@ -189,9 +185,6 @@ import flash.display.MovieClip;
 import flash.events.EventDispatcher;
 import flash.geom.Point;
 import flash.geom.Rectangle;
-
-import flashx.textLayout.operations.MoveChildrenOperation;
-
 import sim.PlayerSim;
 
 import util.CollisionManager;
@@ -200,19 +193,7 @@ import util.ScreenContainer;
 import util.Vector2;
 
 
-interface IWorldObjectData {
-	function setProps( props:Object ) : void ;
-	function getYat( x:Number ) : Number;
-	function testCollision( r: Rectangle ) : CollisionResult;
-	function update() : Point;
-	function onCollision( player : PlayerSim ) : void;
-	function get isConsumable() : Boolean;
-	function get isMonster() : Boolean;
-	function get isCollideableFromBelow() : Boolean;
-}
-
-
-class WorldObjSimBase extends EventDispatcher implements IWorldObjectData {
+class WorldObjSimBase extends EventDispatcher implements {
 	
 	protected var _mc : MovieClip;
 	protected var _collisionImpulse : Point;

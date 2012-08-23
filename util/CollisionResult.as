@@ -1,8 +1,7 @@
 package util
 {
 	import flash.geom.Point;
-	
-	import sim.WorldObject;
+	import interfaces.IWorldObject;
 
 	public class CollisionResult
 	{
@@ -13,18 +12,18 @@ package util
 		
 		private var _code:Number;
 		private var _minSeperatingVector:Vector2;
-		private var _collidedObj:WorldObject;
+		private var _collidedObj:IWorldObject;
 		
 		public var Intersect : Boolean;
 		public var WillIntersect : Boolean;
 		
 		
-		public function CollisionResult( code:Number = 0 , impulse:Vector2 = null, obj:WorldObject = null )
+		public function CollisionResult( code:Number = 0 , impulse:Vector2 = null, obj:IWorldObject = null )
 		{
 			init( code, impulse, obj );
 		}
 		
-		public function init( code:Number = 0 , impulse:Vector2 = null, obj:WorldObject = null ) : void{
+		public function init( code:Number = 0 , impulse:Vector2 = null, obj:IWorldObject = null ) : void{
 			_code = code;
 			_minSeperatingVector = impulse;
 			_collidedObj = obj;			
@@ -46,11 +45,11 @@ package util
 			_minSeperatingVector = value;
 		}
 
-		public function get collidedObj():WorldObject {
+		public function get collidedObj():IWorldObject {
 			return _collidedObj;
 		}
 
-		public function set collidedObj(value:WorldObject):void {
+		public function set collidedObj(value:IWorldObject):void {
 			_collidedObj = value;
 		}
 	}

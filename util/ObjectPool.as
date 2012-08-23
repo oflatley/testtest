@@ -1,29 +1,40 @@
 package util
 {
-	
 	import events.CollisionEvent;
 	
+	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.geom.Point;
+	import flash.geom.Rectangle;
+	import flash.utils.getDefinitionByName;
+	
+	import interfaces.IWorldObject;
 	
 	import sim.PlayerSim;
-	import sim.WorldObject;
+	import sim.WorldObjectFactory;
+	
+	import views.MovieClipView;
 
 	public class ObjectPool
 	{
 		private static var theObjectPool : ObjectPool = null;		
 		private var poolMap : Array;
-				
+		private var activeList : Vector.<PoolObject>;
+		
 		public static function Instance() : ObjectPool {
 			if( null == theObjectPool ) {
 				theObjectPool = new ObjectPool(new SingletonEnforcer());
 			}
 			return theObjectPool;
 		}
-				
+		
+		public function ObjectPool(_:SingletonEnforcer) {
+			poolMap = new Array();
+			activeList = new Vector.<PoolObject>();
+		}
+		
 		public function Initialize(spec:Array, screenContainer : ScreenContainer ) : void {		
-			
 			
 			for each( var elem : Object in spec ) {
 				
@@ -31,43 +42,54 @@ package util
 				poolMap[elem.type] = a;
 				
 				for( var i : int = 0; i < elem.count; ++i ) {
-					var wo : WorldObject = new WorldObject( elem.type );
-					wo.deactivate();
-					a.push( wo );
-					screenContainer.addChild(wo);
+					
+					var mc : MovieClip = createMC( elem.type );
+					var iWO : IWorldObject = WorldObjectFactory.Instance().createWorldObject( elem.type, new Rectangle( 0,0,mc.width, mc.height ) );
+					var mcv : MovieClipView = new MovieClipView( screenContainer, iWO, mc );
+					mcv.active = false;
+					a.push( new PoolObject(iWO, mcv ) );
 				}
 			}
 		}
-		
 		
 		public function Clean() : void {
 			poolMap.slice( 0, poolMap.length );
 		}
 		
-		public function GetObj( type:String ) : WorldObject {
+		public function GetObj( type:String ) : IWorldObject {
 
 			var a : Array = poolMap[type];
 			
 			if( a.length ) {
-				return a.pop(); 
+				var po : PoolObject = a.pop();
+				activeList.push( po );
+				po.movieClipView.active = true;
+				return po.iWorldObj; 
 			}
 
 			trace( "@@@@@ COULD NOT ALLOC TYPE:" + type + "FROM OBJECT POOL @@@@@" );
 			return null;
 		}
 		
-		public function RecycleObj( wo : WorldObject ) : void {
-			wo.deactivate();
-			var a : Array = poolMap[ wo.getType() ];
-			a.push( wo );
+		public function RecycleObj( wo : IWorldObject ) : void {
+
+			for( var i : int = 0; i < activeList.length; ++i ) {
+				if( wo == activeList[i].iWorldObj ) {
+					break;
+				}
+			}
+			
+			if( i < activeList.length ) {
+				var po : PoolObject = activeList.splice( i, 1 ) as PoolObject;
+				poolMap[wo.id].push( po );
+			} else {
+				trace('ERROR -- could not recycleObj in ObjectPool ');
+			}
 		}
-	
-		public function ObjectPool(_:SingletonEnforcer) {
-			poolMap = new Array();
-		}
-		
+
+		// DEPRECATED: getProp  --> cumbersome to implement all properties in the IWorldObject interface
 		public function getProp( type:String, name:String ) : Object {
-			var wo : WorldObject = poolMap[type][0];
+			var wo : IWorldObject = poolMap[type][0].iWorldObj;
 			return wo[name];
 		}
 
@@ -80,7 +102,55 @@ package util
 			}
 			trace(s);
 		}
+		
+		private function createMC(type:String):MovieClip
+		{	
+			var mc:MovieClip;
+			
+			switch(type) {	
+				case "Catapult": return new Catapult(); break;
+				case "Trampoline": return new Trampoline(); break;
+				case "Launcher": return new Launcher(); break;
+				case "Token_MakePlayerBigger": return new Token_MakePlayerBigger(); break;
+				case "Token_MakePlayerSmaller": return new Token_MakePlayerSmaller(); break;  
+				case "SpringBoard": return new SpringBoard(); break;
+				case "Brain":	return new Brain(); break;
+				case "SpeedBoostCoin": return new SpeedBoostCoin(); break;
+				case "Enemy_0": return new Enemy_0(); break;
+				case "Column": return new Column(); break; 
+				case "PlatformShort_elev": return new PlatformShort_0; break;
+				case "PlatformShort_0": return new PlatformShort_0(); break;
+				case "PlatformMedium_0": return new PlatformMedium_0(); break;
+				case "PlatformLong_0": return new PlatformLong_0(); break;							
+				case "PlatformMedium_15": return new PlatformMedium_15(); break;	
+				case "PlatformMedium_345": return new PlatformMedium_345(); break;
+				default:
+					trace("unknown type encountered in createWorldObject");					
+					return new MovieClip();
+			}			
+		}	
 	}
 }
+import flash.display.MovieClip;
+
+import interfaces.IWorldObject;
+
+import views.*;
 
 class SingletonEnforcer {}
+
+class PoolObject {
+	
+	private var _iWO : IWorldObject;
+	private var _mcv : MovieClipView;
+	
+	public function PoolObject( iWO : IWorldObject, mcv : MovieClipView ) {
+		_iWO = iWO;
+		_mcv = mcv;
+	}
+	
+	public function get iWorldObj() : IWorldObject { return _iWO; }
+	public function get movieClipView() : MovieClipView { return _mcv; }
+		
+		
+}

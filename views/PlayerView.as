@@ -4,9 +4,8 @@ package views
 	import flash.display.Sprite;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
-	
 	import sim.Level;
-	import sim.WorldObject;
+
 
 	public class PlayerView
 	{
@@ -26,7 +25,6 @@ package views
 		public function SetPosition( p:Point ) : void {
 			mc.x = p.x;
 			mc.y = p.y;
-		
 			debugBounds.x = p.x;
 			debugBounds.y = p.y;		
 		}

@@ -11,9 +11,11 @@ package sim
 	import flash.net.URLRequest;
 	import flash.system.ApplicationDomain;
 	
+	import interfaces.IWorldObject;
+	
 	import levels.LevelFactory;
 	
-	import sim.WorldObject;
+	import sim.WorldObjectFactory;
 	
 	import util.CollisionManager;
 	import util.CollisionResult;
@@ -35,15 +37,13 @@ package sim
 		private var _objectsToRemove : Array;
 	
 		public function Level( sLevelName : String, _collisionMgr : CollisionManager, playerSim : PlayerSim)
-		{
-			
+		{			
 			_scrollSignaled = false;
 			
 			_collisionMgr.addEventListener( CollisionEvent.PLAYERxWORLD, onPlayerxWorldCollision );
 			ScreenContainer.Instance().addEventListener( ScreenContainerEvent.SLICE_SCROLL, onSliceScroll );
 			playerSim.addEventListener( RemoveFromWorldEvent.REMOVE_FROM_WORLD, onRemoveFromWorld );
-			
-			
+						
 			ScreenContainer.Instance().SetSliceCount(bucketSlices);	
 			collisionsToProcess = new Array();	
 			var typeWidths : Array = new Array();
@@ -118,9 +118,11 @@ package sim
 			for each ( var info : ObjBucketInfo in a ) {
 				
 				// get world object from object pool and initialize
-				var wo : WorldObject = ObjectPool.Instance().GetObj( info.type );
-				wo.activate();
-				wo.SetPosition( new Point( info.x0, info.y ) );
+				var wo : IWorldObject = ObjectPool.Instance().GetObj( info.type );
+				//wo.activate();
+				//wo.SetPosition( new Point( info.x0, info.y ) );
+				wo.position = new Point( info.x0, info.y );
+				
 				
 				if( info.props ) {
 					wo.setProps( info.props );
@@ -130,13 +132,13 @@ package sim
 				activeObjects.push( wo );
 				
 				// store when they should be removed from level
-				var x0 : int = Math.floor(wo.GetBounds().right); 
+				var x0 : int = Math.floor(wo.bounds.right); 
 				var a : Array = buckets_endX[Math.floor(x0/bucketWidth)];
 				a.push(wo);
 			}
 		}
 		
-		private function removeFromActiveObjects( wo : WorldObject ) : Boolean  {
+		private function removeFromActiveObjects( wo : IWorldObject ) : Boolean  {
 			for( var i : int = 0; i < activeObjects.length; ++i ) {
 				if( wo == activeObjects[i] ) {
 					break;
@@ -151,7 +153,7 @@ package sim
 			return false;
 		}
 		
-		private function removeObject( woToRemove:WorldObject ) : void {
+		private function removeObject( woToRemove:IWorldObject ) : void {
 
 			removeFromActiveObjects( woToRemove );	
 			ObjectPool.Instance().RecycleObj( woToRemove );
@@ -163,7 +165,7 @@ package sim
 
 			var ar : Array;
 			
-			for each (var woToRemove :WorldObject  in _objectsToRemove) 
+			for each (var woToRemove :IWorldObject  in _objectsToRemove) 
 			{
 				removeObject( woToRemove );	
 			}
@@ -172,7 +174,7 @@ package sim
 			for each( var cr : CollisionResult in collisionsToProcess ) {
 				if( cr.collidedObj.isConsumable) {
 					removeObject( cr.collidedObj );
-					var ndx : int = cr.collidedObj.GetBounds().right / bucketWidth;
+					var ndx : int = cr.collidedObj.bounds.right / bucketWidth;
 					ar = buckets_endX[ndx];
 					for( var i : int = 0 ; i < ar.length; ++i ) {
 						if( cr.collidedObj == ar[i] ) {
@@ -195,12 +197,12 @@ package sim
 				
 				// remove objects that have now gone offscreen to the left
 				ar = buckets_endX[_ndxCurrentScreenSlice-1];
-				for each( var wo : WorldObject in ar ) {	
+				for each( var wo : IWorldObject in ar ) {	
 					
 					//trace( ' -- Removing:' + wo.GetBounds().left + ' ' + wo.GetBounds().right ); 
 					
 					removeObject(wo);					
-					if( wo.GetBounds().left > playerPosition.x ) {
+					if( wo.bounds.left > playerPosition.x ) {
 						trace("asdgasdgasd");
 					}
 				}		
@@ -213,7 +215,7 @@ package sim
 			}
 			
 			// update all active objects
-			for each ( var wObj : WorldObject in activeObjects ) {
+			for each ( var wObj : IWorldObject in activeObjects ) {
 				wObj.update();
 			}				
 		}

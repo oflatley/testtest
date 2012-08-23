@@ -49,7 +49,6 @@ package util
 		
 		public function addChild( o : Object ) : void { 
 			o.AddToScene( _container );
-
 		}
 
 		

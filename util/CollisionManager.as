@@ -8,8 +8,9 @@ package util
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	
+	import interfaces.IWorldObject;	
 	import sim.PlayerSim;
-	import sim.WorldObject;
+
 	
 	public class CollisionManager  extends EventDispatcher
 	{
@@ -23,7 +24,7 @@ package util
 			var playerBounds : Rectangle = player.getBounds();
 			var results:Array = new Array();	
 			
-			for each( var wo : WorldObject in activeWorldObjects ) {
+			for each( var wo : IWorldObject in activeWorldObjects ) {
 				
 				var cr : CollisionResult = wo.testCollision( playerBounds ); 
 				if( cr ) {
@@ -51,7 +52,7 @@ package util
 			var playerBounds : Rectangle = player.getBounds();
 			var results:Array = new Array();
 			
-			for each( var wo : WorldObject in activeObjects ) {
+			for each( var wo : IWorldObject in activeObjects ) {
 				
 				var cr : CollisionResult = wo.testCollision( playerBounds ); 
 				if( cr ) {

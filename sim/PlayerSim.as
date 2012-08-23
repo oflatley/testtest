@@ -12,6 +12,8 @@ package sim
 	import flash.geom.Vector3D;
 	import flash.utils.setInterval;
 	
+	import interfaces.IWorldObject;
+	
 	import util.CollisionManager;
 	import util.CollisionResult;
 	import util.Controller;
@@ -33,7 +35,7 @@ package sim
 		private var _speedMultiplier : Number = 1.0;
 		private var _isCollideable : Boolean = true;
 		private var _dragX:Number = 2;
-		private var _objectCurrentlyUnderfoot:WorldObject = null;
+		private var _objectCurrentlyUnderfoot:IWorldObject = null;
 		
 		public function PlayerSim( controller:Controller, velX:Number, _gravity:Number, _playerView:PlayerView, _collisionMgr : CollisionManager )
 		{
@@ -123,7 +125,7 @@ package sim
 		}
 
 		private function applyCollision( cr : CollisionResult ) : void {
- 			var wo : WorldObject = cr.collidedObj;
+ 			var wo : IWorldObject = cr.collidedObj;
 			var v : Vector2 = cr.msv;
 			
 			if( v.y < 0 ) {
