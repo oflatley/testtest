@@ -26,8 +26,9 @@ package util
 		private var activeList : Vector.<PoolObject>;
 
 		private var _hackLoadSwfCompleteCallback : Function;		// for swf based assets
-		private var mcMapping_swf : Array = new Array();			// for swf based assets
+		private var _mcMapping_swf : Array = new Array();			// for swf based assets
 
+		private var _playerMC_hackForSwf : MovieClip;
 		
 		public static function Instance() : ObjectPool {
 			if( null == theObjectPool ) {
@@ -40,7 +41,11 @@ package util
 			poolMap = new Array();
 			activeList = new Vector.<PoolObject>();
 		}
-				
+			
+		public function get playerMC() : MovieClip {
+			return _playerMC_hackForSwf;
+		}
+		
 		public function initialize(spec:Array, screenContainer : ScreenContainer ) : void {		
 			
 			for each( var elem : Object in spec ) {
@@ -109,7 +114,8 @@ package util
 			}
 			trace(s);
 		}
-		
+
+/*	if using swc ...	
 		private function createMC(type:String):MovieClip
 		{	
 			var mc:MovieClip;
@@ -136,7 +142,7 @@ package util
 					return new MovieClip();
 			}			
 		}	
-		
+*/		
 		// swf loading support
 		public function buildMovieClipClasses( swfFile : String, cb : Function )  : void {
 			_hackLoadSwfCompleteCallback = cb;
@@ -155,15 +161,16 @@ package util
 			
 			for each( var s : String in aNames ) {
 				var Klass : Object = ad.getDefinition( s );
-				mcMapping_swf[s] = Klass;			
+				_mcMapping_swf[s] = Klass;			
 			}
-			mcMapping_swf["PlatformShort_elev"] = mcMapping_swf['PlatformShort_0'];
+			_mcMapping_swf["PlatformShort_elev"] = _mcMapping_swf['PlatformShort_0'];
+			_playerMC_hackForSwf = createMC_swf("Player");
 			
 			_hackLoadSwfCompleteCallback();
 		}
 		
 		private function createMC_swf( type:String ) : MovieClip {
-			var klass : Class = mcMapping_swf[type];
+			var klass : Class = _mcMapping_swf[type];
 			return new klass();
 		}
 

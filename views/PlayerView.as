@@ -4,7 +4,10 @@ package views
 	import flash.display.Sprite;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	
 	import sim.Level;
+	
+	import util.ObjectPool;
 
 
 	public class PlayerView
@@ -14,7 +17,7 @@ package views
 				
 		public function PlayerView()
 		{
-			mc = new Player();
+			mc = ObjectPool.Instance().playerMC; // for swc: new Player();
 			
 			debugBounds = new Sprite();
 			debugBounds.graphics.lineStyle( 2, 0xFF0000 );
