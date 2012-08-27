@@ -1,5 +1,11 @@
 package levels
 {
+	import data.level.*;
+	
+	import interfaces.ILevelData;
+	
+	import sim.Level;
+	
 	public class LevelFactory
 	{
 		private var _levels:Array;
@@ -8,6 +14,7 @@ package levels
 		{
 			_levels = new Array;
 			_levels["Level0"] = new Level0();
+			_levels["Level1"] = new Level1();
 		}
 		
 		public function GetLevel( s:String ) : ILevelData {
@@ -19,3 +26,5 @@ package levels
 		}
 	}
 }
+
+

@@ -1,16 +1,25 @@
 package
 {
+	
+	import collision.CollisionDataProvider;
+	
 	import events.ControllerEvent;
 	
 	import flash.display.Loader;
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.events.IOErrorEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.geom.Vector3D;
+	import flash.net.FileReference;
+	import flash.net.URLLoader;
 	import flash.net.URLRequest;
 	import flash.system.ApplicationDomain;
+	import flash.utils.flash_proxy;
+	
+	import interfaces.ICollisionData;
 	
 	import sim.Level;
 	import sim.PlayerSim;
@@ -34,12 +43,14 @@ package
 		private var playerSim:PlayerSim;
 		private var currentLevel:Level;
 		private var screenContainer : ScreenContainer;
-
-		
+		private var collisionDataProvider : CollisionDataProvider;		
 
 		private static const objPoolAllocs : Array = [
 			
-			{type:"PlatformShort_0" , 	count:10 },
+			{type:"Platform_Arc_0" , 	count:5 },
+		
+		{type:"PlatformShort_0" , 	count:12 },
+/*			
 			{type:"PlatformMedium_0", 	count:10 },
 			{type:"PlatformMedium_15", 	count:10 },
 			{type:"PlatformMedium_345", count:10 },
@@ -55,24 +66,29 @@ package
 			{type:"Trampoline", count:3 },
 			{type:"Launcher",count:5 },
 			{type:"Catapult",count:3 },
-			
-			
+*/
 			];
 
 		
 		public function SideScroller()
 		{
 			super();
-			
+
 			collisionManager = new CollisionManager();
 			screenContainer = ScreenContainer.Instance();
 			addChild( screenContainer.container );			
 			
-			ObjectPool.Instance().buildMovieClipClasses( 'assets/assets.swf', startGame ); // if using swf
-			// swc: startGame();
+			ObjectPool.Instance().buildMovieClipClasses( 'assets/assets.swf', init); // if using swf
+			
+			// swc: loadData()  ;
+		}
+		
+		private function init(): void {
+			CollisionDataProvider.instance.buildCollisionData("data/collisionObj/collisionData.dat", startGame );
 		}
 		
 		private function startGame():void{
+
 			stage.color = 0x444444;
 			stage.frameRate = 60;
 			
@@ -80,9 +96,9 @@ package
 			var playerView : PlayerView = new PlayerView(  );
 			playerView.AddToScene( screenContainer.container );
 			playerSim = new PlayerSim(new Controller(stage), velocityX, gravity, playerView, collisionManager );
-			playerSim.SetPosition( new Point( 10,500 ) );
+			playerSim.SetPosition( new Point( 10,425 ) );
 	
-  			currentLevel = new Level("Level0",collisionManager,playerSim);
+  			currentLevel = new Level("Level1",collisionManager,playerSim);
 			onResize( null );
 			addEventListener(Event.RESIZE, onResize );
  			addEventListener(Event.ENTER_FRAME, onEnterFrame );
@@ -92,7 +108,7 @@ package
 			playerSim.Update();
 			currentLevel.update(playerSim.worldPosition);
 			collisionManager.update(playerSim,currentLevel.activeObjects);		// dispatches CollisionEvents
-			screenContainer.update( playerSim.getBounds().topLeft );
+			screenContainer.update( playerSim.worldPosition );
 		}
 		
 		private function onResize( e:Event ) : void {
@@ -105,4 +121,5 @@ package
 		}
 	}
 }
+
 

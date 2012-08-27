@@ -23,12 +23,13 @@ package util
 	{
 		private static var theObjectPool : ObjectPool = null;		
 		private var poolMap : Array;
-		private var activeList : Vector.<PoolObject>;
+		private var activeList : Array;
 
 		private var _hackLoadSwfCompleteCallback : Function;		// for swf based assets
 		private var _mcMapping_swf : Array = new Array();			// for swf based assets
 
 		private var _playerMC_hackForSwf : MovieClip;
+		private var _boundBoxKlass:Object;
 		
 		public static function Instance() : ObjectPool {
 			if( null == theObjectPool ) {
@@ -39,7 +40,7 @@ package util
 		
 		public function ObjectPool(_:SingletonEnforcer) {
 			poolMap = new Array();
-			activeList = new Vector.<PoolObject>();
+			activeList = new Array();
 		}
 			
 		public function get playerMC() : MovieClip {
@@ -62,6 +63,7 @@ package util
 					a.push( new PoolObject(iWO, mcv ) );
 				}
 			}
+			
 		}
 		
 		public function Clean() : void {
@@ -74,7 +76,17 @@ package util
 			
 			if( a.length ) {
 				var po : PoolObject = a.pop();
+				
+				if( null == po ) {
+ 					trace('bismark');
+				}
+				
 				activeList.push( po );
+				
+				if( null == po.movieClipView ) {
+					trace('denmark');
+				}
+				
 				po.movieClipView.active = true;
 				return po.iWorldObj; 
 			}
@@ -92,7 +104,7 @@ package util
 			}
 			
 			if( i < activeList.length ) {
-				var po : PoolObject = activeList.splice( i, 1 ) as PoolObject;
+				var po : PoolObject = activeList.splice( i, 1 )[0] as PoolObject;
 				poolMap[wo.id].push( po );
 			} else {
 				trace('ERROR -- could not recycleObj in ObjectPool ');
@@ -137,6 +149,7 @@ package util
 				case "PlatformLong_0": return new PlatformLong_0(); break;							
 				case "PlatformMedium_15": return new PlatformMedium_15(); break;	
 				case "PlatformMedium_345": return new PlatformMedium_345(); break;
+				case "Platform_Arc_0":	return new Platform_Arc_0(); break;
 				default:
 					trace("unknown type encountered in createWorldObject");					
 					return new MovieClip();
@@ -154,7 +167,7 @@ package util
 		//swf loading support
 		private function onSwfLoadComplete(event:Event):void
 		{
-			var aNames : Array = ["Player","Catapult","Trampoline","Launcher","Token_MakePlayerBigger","Token_MakePlayerSmaller", "SpringBoard","Brain","SpeedBoostCoin","Enemy_0","Column","PlatformShort_0","PlatformMedium_0","PlatformLong_0","PlatformMedium_15","PlatformMedium_345"];
+			var aNames : Array = ["Player","Platform_Arc_0","Catapult","Trampoline","Launcher","Token_MakePlayerBigger","Token_MakePlayerSmaller", "SpringBoard","Brain","SpeedBoostCoin","Enemy_0","Column","PlatformShort_0","PlatformMedium_0","PlatformLong_0","PlatformMedium_15","PlatformMedium_345"];
 					
 			event.target.removeEventListener( Event.COMPLETE, arguments.callee );
 			var ad:ApplicationDomain = event.target.applicationDomain;
@@ -167,12 +180,23 @@ package util
 			_playerMC_hackForSwf = createMC_swf("Player");
 			
 			_hackLoadSwfCompleteCallback();
+			
+			_boundBoxKlass = ad.getDefinition( "BoundingBox" ) as Class;
 		}
+
+		
 		
 		private function createMC_swf( type:String ) : MovieClip {
 			var klass : Class = _mcMapping_swf[type];
 			return new klass();
 		}
+		
+		
+		public function getDebugBoundingBox() : MovieClip {
+
+			return new _boundBoxKlass() as MovieClip;
+		}
+		
 
 	}
 }

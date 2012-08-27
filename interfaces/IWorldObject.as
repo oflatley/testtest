@@ -1,6 +1,5 @@
 package interfaces {
 	import flash.events.EventDispatcher;
-	import flash.events.IEventDispatcher;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	
@@ -20,7 +19,7 @@ package interfaces {
 		
 		function setProps( props:Object ) : void ;
 		function getYat( x:Number ) : Number;
-		function testCollision( r: Rectangle ) : CollisionResult;
+		function testCollision( iface : ICollider ) : CollisionResult;
 		function update() : void;
 		function onCollision( player : PlayerSim ) : void;
 		
@@ -29,7 +28,7 @@ package interfaces {
 		function get isCollideableFromBelow() : Boolean;
 		function querry( s : String ) : Boolean; 
 	
-		function get eventDispatcher() : IEventDispatcher;
+		function get eventDispatcher() : EventDispatcher;
 		function get width() : Number; 				// TODO -- kill this 
 		
 	}

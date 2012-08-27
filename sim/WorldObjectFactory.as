@@ -1,5 +1,7 @@
 package sim
 {
+	import collision.CollisionDataProvider;
+	
 	import events.CollisionEvent;
 	import events.WorldObjectEvent;
 	
@@ -16,7 +18,7 @@ package sim
 	
 	public class WorldObjectFactory {
 		
-		
+			
 		private static var theWorldObjectFactory : WorldObjectFactory = null;		
 		private var map : Array = new Array();
 		
@@ -55,6 +57,7 @@ package sim
 				case "PlatformShort_elev":
 					return new ElevatorPlatformSim( _type, _bounds );
 				case "Column":  
+				case "Platform_Arc_0":
 				case "PlatformShort_0":
 				case "PlatformMedium_0":
 				case "PlatformLong_0": 			
@@ -77,6 +80,8 @@ class SingletonEnforcer {}
 
 
 
+import collision.CollisionDataProvider;
+
 import events.CollisionEvent;
 import events.WorldObjectEvent;
 
@@ -86,9 +91,12 @@ import flash.events.IEventDispatcher;
 import flash.geom.Point;
 import flash.geom.Rectangle;
 
+import interfaces.ICollider;
+import interfaces.ICollisionData;
 import interfaces.IWorldObject;
 
 import sim.PlayerSim;
+import sim.WorldObjectFactory;
 
 import util.CollisionManager;
 import util.CollisionResult;
@@ -101,17 +109,17 @@ import util.Vector2;
 
 class WorldObjSimBase extends EventDispatcher implements IWorldObject {
 	
-	//protected var _mc : MovieClip;
 	protected var _collisionImpulse : Point;
 	protected var _collisionResult : CollisionResult;
 	protected var _bounds : Rectangle;
 	protected var _querryMap : Array;
+	protected var _ICollisionData : ICollisionData;
 	private var _id : String;
 	
-
 	
 	public function WorldObjSimBase( id : String, bounds : Rectangle ) {
 
+		_ICollisionData = CollisionDataProvider.instance.getCollisionData(id);
 		_id = id;
 		_bounds = bounds;
 		_collisionImpulse = new Point();
@@ -170,11 +178,35 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObject {
 		return _bounds.top;
 	}
 	
-	public function testCollision( r: Rectangle ) : CollisionResult {
+	public function testCollision( iCol: ICollider ) : CollisionResult {
 	
-		var v : Vector2  = CollisionManager.SAT_rectXrect( r, _bounds );		
-		return v ? new CollisionResult(0,v,this) : null;
-/*		
+		var r : Rectangle = iCol.bounds;
+		var v : Vector2  = CollisionManager.SAT_rectXrect( r, _bounds );	
+		
+		
+		if( v ) {
+			if( _ICollisionData ) {
+				
+				var testPoint : Point = iCol.collisionTestPoints[0];
+				var testPointdebug : Point = new Point( (r.x + r.width)/2, r.bottom );
+				
+				if( testPoint.x != testPointdebug.x && testPoint.y != testPointdebug.y ) {
+					trace('asdfasdfasdfasdf');
+				}
+				
+				var localPoint : Point = testPoint.subtract(_bounds.topLeft );
+				var msv : Vector2 = _ICollisionData.testPoint( localPoint );
+				
+				return new CollisionResult( 0,msv,this ); 
+				
+				//return b ? new CollisionResult(0,v,this) : null;
+				
+			} else {
+				return new CollisionResult(0,v,this) ;			
+			}
+		} 
+		return null;
+		/*		
 		var cr : CollisionResult = CollisionManager.SAT_rxr( r, _bounds, new Vector2(0,0) );
 		
 		if( cr.Intersect ) {
@@ -204,7 +236,7 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObject {
 		dispatchEvent( new WorldObjectEvent( WorldObjectEvent.WORLDOBJECT_MOVE ) );
 	}
 	
-	public function get eventDispatcher():IEventDispatcher
+	public function get eventDispatcher():EventDispatcher
 	{
 		return this;
 	}
@@ -509,10 +541,13 @@ class SlopedPlatformDataSim extends WorldObjSimBase {
 		return (x - _verts[VERT_INDEX_UL].x + _center.x) * slope + _verts[VERT_INDEX_UL].y + _center.y; 
 	}
 	
-	override public function testCollision( r : Rectangle ) : CollisionResult {
-				
+/*
+	override public function testCollision( iCol : ICollider ) : CollisionResult {
+		
+		var r : Rectangle = iCol.bounds;
 		computeCenter();
 		buildVerts();
+		var I : ICollisionData  = new CollisionDataProvider().getCollisionData( id );
 
 		var msv : Vector2 = CollisionManager.SAT_vertsXrect( _center, _verts, r );
 		
@@ -522,7 +557,7 @@ class SlopedPlatformDataSim extends WorldObjSimBase {
 		}
 		return null;		
 	}	
-	
+*/	
 	private function computeSlope( ) : Number {
 		return (_verts[VERT_INDEX_UR].y - _verts[VERT_INDEX_UL].y) / (_verts[VERT_INDEX_UR].x - _verts[VERT_INDEX_UL].x);
 	} 
@@ -548,143 +583,4 @@ class SlopedPlatformDataSim extends WorldObjSimBase {
 		_verts[VERT_INDEX_LL].x = _bounds.x - _center.x;
 		_verts[VERT_INDEX_LL].y = _bounds.y + _bounds.height - _center.y;		
 	}
-	
-	
 }
-/*
-
-public class WorldObject extends EventDispatcher
-{
-private var debugBounds:Sprite;
-//private var mc:MovieClip;
-private var objData : IWorldObjectData;
-private var _type : String;
-//private var _bounds : Rectangle;
-
-
-public function WorldObject( type:String, r:Rectangle  )
-{
-_bounds = r;
-_type = type;
-//mc = createMC(type);
-
-objData = createWorldObjData( _type, r );	
-
-if( null == objData ) {
-trace("ERROR, could not create objData for: " + _type );
-}
-
-debugBounds = new Sprite();
-debugBounds.graphics.lineStyle(2, 0x0000FF);
-debugBounds.graphics.drawRect( r.x, r.y, r.width, r.height );
-}
-
-public function get isMonster() : Boolean {
-return objData.isMonster;
-}
-
-public function get isConsumable() : Boolean {
-return objData.isConsumable;
-}
-
-public function get isCollideableFromBelow() : Boolean {
-return objData.isCollideableFromBelow;
-}
-
-public function onCollision( player : PlayerSim ) : void {
-objData.onCollision( player );
-}
-
-public function getType() : String {
-return _type;
-}
-
-public function offset( p:Point ) : void {
-//_bounds.x += p.x;
-//_bounds.y += p.y;
-objData.offset(p);
-dispatchEvent( WorldObjectEvent.WORLDOBJECT_MOVE );
-}
-
-public function set position( p : Point ) : void {
-//_bounds.x = p.x;
-//_bounds.y = p.y;
-objData.position(p);
-dispatchEvent( WorldObjectEvent.WORLDOBJECT_MOVE );
-}
-
-public function get position() : Point {
-return objData.position; //_bounds.topLeft;			
-}
-/*
-public function SetPosition( p:Point ) : void {
-mc.x = p.x
-mc.y = p.y;	
-debugBounds.x = p.x;
-debugBounds.y = p.y;
-}
-*/	
-/*
-public function get width():Number
-{
-	return _bounds.width;
-}		
-
-/*		
-public function activate() : void {
-mc.visible = true;
-}
-
-public function deactivate() : void {
-mc.visible = false;
-
-}
-*/	
-/*
-public function update() : void {
-	
-	
-	var pImpulse : Point = objData.update();
-	if ( pImpulse ) {
-		offset( pImpulse );
-		
-		//	mc.x += pImpulse.x;
-		//	mc.y += pImpulse.y;		
-		//	debugBounds.x += pImpulse.x;
-		//	debugBounds.y += pImpulse.y;
-	}
-}
-
-public function setProps( props:Object ) : void  {
-	objData.setProps( props );
-}
-
-
-//		public function GetBounds() : Rectangle {			
-//			return new Rectangle( mc.x,mc.y,mc.width,mc.height );
-//		}
-
-//		public function AddToScene( scene:Sprite ) : void {
-//			scene.addChild( mc );
-//			scene.addChild(debugBounds);
-//		}
-
-public function getYat( xWorld:Number ) : Number {			
-	return objData.getYat( xWorld );
-}
-
-public function testCollision( r : Rectangle ) : CollisionResult {
-	
-	var cr : CollisionResult = objData.testCollision(r);
-	if( cr ) {
-		cr.collidedObj = this;	// TODO, pass iface objData
-	}
-	return cr;
-}
-	
-	
-}
-}
-
-
-*/

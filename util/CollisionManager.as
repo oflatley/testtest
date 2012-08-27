@@ -21,12 +21,13 @@ package util
 
 			// TODO broad culling of objects based on screen/world slice
 			
-			var playerBounds : Rectangle = player.getBounds();
+			
+			var playerBounds : Rectangle = player.bounds;
 			var results:Array = new Array();	
 			
 			for each( var wo : IWorldObject in activeWorldObjects ) {
 				
-				var cr : CollisionResult = wo.testCollision( playerBounds ); 
+				var cr : CollisionResult = wo.testCollision( player ); 
 				if( cr ) {
 					results.push(cr);
 				}
@@ -49,12 +50,12 @@ package util
 
 		private function doCollisionsWalking( player:PlayerSim, activeObjects:Array ) : void  {
 		
-			var playerBounds : Rectangle = player.getBounds();
+			var playerBounds : Rectangle = player.bounds;
 			var results:Array = new Array();
 			
 			for each( var wo : IWorldObject in activeObjects ) {
 				
-				var cr : CollisionResult = wo.testCollision( playerBounds ); 
+				var cr : CollisionResult = wo.testCollision( player ); 
 				if( cr ) {
 					results.push(cr);
 				}

@@ -119,10 +119,7 @@ package sim
 				
 				// get world object from object pool and initialize
 				var wo : IWorldObject = ObjectPool.Instance().GetObj( info.type );
-				//wo.activate();
-				//wo.SetPosition( new Point( info.x0, info.y ) );
 				wo.position = new Point( info.x0, info.y );
-				
 				
 				if( info.props ) {
 					wo.setProps( info.props );
