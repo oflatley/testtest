@@ -2,6 +2,7 @@ package sim
 {
 	import events.CollisionEvent;
 	import events.ControllerEvent;
+	import events.PlayerEvent;
 	import events.RemoveFromWorldEvent;
 	
 	import flash.display.MovieClip;
@@ -26,12 +27,12 @@ package sim
 	
 	public class PlayerSim extends EventDispatcher implements ICollider
 	{
-		private var playerController : Controller;
-		private var velocityX:Number = 0;
-		private static const terminalVelocity:Number = 6;		// TODO percentage
+		private static const TERMINAL_VELOCITY:Number = 6;		// TODO percentage
+
+		private var _playerController : Controller;
+		private var _velocityX:Number = 0;
 		private var _velocity:Vector2 = new Vector2();
-		private var gravity:Number;
-		private var view:PlayerView;			// TODO, kill this, decouple view from sim 
+		private var _gravity:Number;
 		private var _nCoins : int;
 		private var _speedMultiplier : Number = 1.0;
 		private var _isCollideable : Boolean = true;
@@ -48,20 +49,17 @@ package sim
 		private var _collisionTestPointsJumpingUp : Vector.<Point> = new Vector.<Point>(5);
 		private var _registrationPointOffset:Point;
 		
-		public function PlayerSim( controller:Controller, velX:Number, _gravity:Number, _playerView:PlayerView, _collisionMgr : CollisionManager )
+		public function PlayerSim( controller:Controller, velX:Number, _gravity:Number, bounds:Rectangle, _collisionMgr : CollisionManager )
 		{
 			super(null);
 			reset();
 				
-			velocityX = velX;
-			gravity = _gravity ;			
-			view = _playerView;			
-			playerController = controller;
-			
-			playerController.addEventListener(ControllerEvent.JUMP, onJump );		
-			_collisionMgr.addEventListener(CollisionEvent.PLAYERxWORLD, onCollision_playerVsWorld );
-		
-			_bounds = _playerView.getBounds().clone();	
+			_velocityX = velX;
+			_gravity = _gravity ;			
+			_playerController = controller;			
+			_playerController.addEventListener(ControllerEvent.JUMP, onJump );		
+			_collisionMgr.addEventListener(CollisionEvent.PLAYERxWORLD, onCollision_playerVsWorld );		
+			_bounds = bounds; 
 			_originalSpan.offset( _bounds.width, _bounds.height );
 
 			initLocalCollisionTestPoints(1);	
@@ -102,19 +100,26 @@ package sim
 		public function addCoins( n : int ) : void {
 			_nCoins += n;
 		}
+
+		private function dispatchMoveAndScale( scale : Number, pos : Point ) : void {
+			var e :PlayerEvent = new PlayerEvent( PlayerEvent.PLAYER_MOVE );
+			e.newPostition = pos;
+			dispatchEvent( e );			
+			e  = new PlayerEvent( PlayerEvent.PLAYER_SCALE );
+			e.scale = scale;
+			dispatchEvent( e );			
+		}
+		
 		
 		public function scale( n : Number, duration : Number ) : void {
 		
 			var h : Number = _originalSpan.y * n;
-			_scaleOffsetY = _bounds.height - h;
-			
+			_scaleOffsetY = _bounds.height - h;			
 			_bounds.y = _bounds.bottom - h;			
  			_bounds.width = _originalSpan.x * n;
 			_bounds.height = h;
 			initLocalCollisionTestPoints(n);
-			
-			view.SetPosition( _bounds.topLeft );
- 			view.scale( n );
+			dispatchMoveAndScale( n, _bounds.topLeft );			
 			setInterval( restoreNormalScale, duration );
 		} 
 		
@@ -124,8 +129,7 @@ package sim
 			_bounds.y -= _scaleOffsetY;
 		
 			initLocalCollisionTestPoints(1);
-			view.SetPosition( _bounds.topLeft );
-			view.scale( 1 );
+			dispatchMoveAndScale( 1, _bounds.topLeft );
 		}
 		
 		public function addSpeedBoost( duration_ms : int, speedMultiplier : Number ) : void {
@@ -152,17 +156,17 @@ package sim
 			//pos.x += _velocity.x * _speedMultiplier;
 
 			_velocity.x -= _dragX;
-			if( _velocity.x < velocityX ) {
-				_velocity.x = velocityX;
+			if( _velocity.x < _velocityX ) {
+				_velocity.x = _velocityX;
 			}
 			
 			if(_objectUnderfootThisFrame ) {
-				_velocity.y = gravity;
+				_velocity.y = _gravity;
 			} else {
-				_velocity.y += gravity;
+				_velocity.y += _gravity;
 
-				if( _velocity.y > terminalVelocity ) {
-					_velocity.y = terminalVelocity;
+				if( _velocity.y > TERMINAL_VELOCITY ) {
+					_velocity.y = TERMINAL_VELOCITY;
 				}
 			}
 						
@@ -293,7 +297,12 @@ package sim
 		{
 			_bounds.x = value.x;
 			_bounds.y = value.y;
-			view.SetPosition( value );
+			
+			var event : PlayerEvent = new PlayerEvent( PlayerEvent.PLAYER_MOVE );
+			event.newPostition = value;
+			dispatchEvent( event );
+			
+//			view.SetPosition( value );
 			buildCollisionTestPoints();
 		}
 		
@@ -340,7 +349,10 @@ package sim
 			_collisionTestPointsJumpingUp[4].x = _localCollisionTestPoints[1].x + _bounds.x;
 			_collisionTestPointsJumpingUp[4].y = _localCollisionTestPoints[1].y + _bounds.y;
 			
-			view.drawTestPoints( collisionTestPoints );
+			
+			var event : PlayerEvent = new PlayerEvent( PlayerEvent.PLAYER_DEBUG_INVALIDATE_COLLISION_NODES );
+			event.collisionNodes_debug = collisionTestPoints;
+//			view.drawTestPoints( collisionTestPoints );
 		}
 		
 		public function get velocity():Vector2

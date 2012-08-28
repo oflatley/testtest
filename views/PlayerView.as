@@ -1,7 +1,11 @@
 package views
 {
+	import events.PlayerEvent;
+	
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
+	import flash.events.Event;
+	import flash.events.EventDispatcher;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	
@@ -27,7 +31,32 @@ package views
 			}
 		}
 		
-		public function drawTestPoints( v : Vector.<Point> ) : void {
+		public function initEventListeners( ed : EventDispatcher ) : void {
+			ed.addEventListener( PlayerEvent.PLAYER_MOVE, onPlayerMove );
+			ed.addEventListener( PlayerEvent.PLAYER_SCALE, onPlayerScale );
+			ed.addEventListener( PlayerEvent.PLAYER_DEBUG_INVALIDATE_COLLISION_NODES, onPlayerInvColNodes_debug );
+		}
+		
+		protected function onPlayerInvColNodes_debug(event:PlayerEvent):void
+		{
+			drawTestPoints( event.collisionNodes_debug );
+		}
+		
+		protected function onPlayerScale(event:PlayerEvent):void
+		{
+			var n : Number = event.scale;
+			mc.scaleX = n;
+			mc.scaleY = n; 			
+		}
+		
+		protected function onPlayerMove(event:PlayerEvent):void
+		{
+			var p : Point = event.newPostition;
+			mc.x = p.x;
+			mc.y = p.y;			
+		}
+		
+		private function drawTestPoints( v : Vector.<Point> ) : void {
 			for( var i : int = 0; i < _debugTP.length; ++i ) {
 					
 				var mc : MovieClip = _debugTP[i];
@@ -42,10 +71,6 @@ package views
 			}
 		}
 		
-		public function SetPosition( p:Point ) : void {
-			mc.x = p.x;
-			mc.y = p.y;
-		}
 		
 		public function AddToScene( scene:Sprite ) : void {
 			scene.addChild(mc);
@@ -59,10 +84,15 @@ package views
 		public function getBounds() : Rectangle {
 			return new Rectangle( mc.x, mc.y, mc.width, mc.height );
 		}
-		
-		public function scale( n : Number ) : void {
+/*		
+		private function SetPosition( p:Point ) : void {
+			mc.x = p.x;
+			mc.y = p.y;
+		}
+		private function scale( n : Number ) : void {
 			mc.scaleX = n;
 			mc.scaleY = n; 
 		}
+*/		
 	}
 }

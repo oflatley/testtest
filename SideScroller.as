@@ -93,8 +93,9 @@ package
 			ObjectPool.Instance().initialize( objPoolAllocs, screenContainer );
 			var playerView : PlayerView = new PlayerView(  );
 			playerView.AddToScene( screenContainer.container );
-			playerSim = new PlayerSim(new Controller(stage), velocityX, gravity, playerView, collisionManager );
+			playerSim = new PlayerSim(new Controller(stage), velocityX, gravity, playerView.getBounds(), collisionManager );
 			playerSim.SetPosition( new Point( 10,405 ) );
+			playerView.initEventListeners( playerSim );
 	
   			currentLevel = new Level("Level0",collisionManager,playerSim);
 			onResize( null );

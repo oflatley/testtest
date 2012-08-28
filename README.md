@@ -1,10 +1,13 @@
 TODO
-[8/28] bitarray
+[8/28] bitarray -- tool and code, reduce collision data by 32x
+[8/28 ]refacotor playa code (sim/rep) -- playersim now knows nothing about playerview, playerview has only the EventDIspatcher of PlayerSim
+[8/28] querry function added to world objects -- replace myriad iscollideable, ismonster, isfoo, isEtc
+
 more collisions
 collsion reaction
-[8/28] querry
 piecemeal levels for variation
 optimize collisions
+memory usage profile for collision data
 
 
 tarzan -- swing from a vine
