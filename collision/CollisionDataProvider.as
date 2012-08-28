@@ -6,7 +6,7 @@ package collision
 	public class CollisionDataProvider { 
 	
 		private static var _theInstance : CollisionDataProvider = null;
-		private var _map:Array;
+		private var _map:Array;		// associate [type name] <--> CollisionData  e.g.  ['platform_arc'] = new CollisionData(w,h,bitData);
 		
 		public function getCollisionData( s : String ) : ICollisionData 
 		{ 
@@ -74,13 +74,15 @@ class DatFileParser {
 				var sSplits : Array  = s.split( /:/ );
 				
 				var dfp : DatFileParserWorker = new DatFileParserWorker(sSplits[1]);
-				var w : int = dfp.getNext();
-				var h : int = dfp.getNext();
+				var w : uint = dfp.getNext();
+				var h : uint = dfp.getNext();			
+				var dim : uint = w*h;
+				var count : uint = (dim >> 5) + ( (dim&31) ? 1 : 0 );
+				var v : Vector.<uint> = new Vector.<uint>(count);	
+				var vdx : int = 0;
 				
-				var v : Vector.<int> = new Vector.<int>();	
-				var i :int;
-				while( -1 != ( i = dfp.getNext() ) ){
-					v.push(i);
+				while( dfp.hasNext() ) {
+					v[vdx++] = dfp.getNext();
 				}
 				
 				var type : String = sSplits[0];		
@@ -106,11 +108,15 @@ class DatFileParserWorker {
 		_idxCursor = 0;
 	}
 	
-	public function getNext() : int {
+	public function hasNext() : Boolean {
+		return _idxCursor < _src.length; 
+	}
+	
+	public function getNext() : uint {
 		
-		if( _idxCursor >= _src.length ) {
-			return -1;
-		}
+//		if( _idxCursor >= _src.length ) {
+//			return -1;
+//		}
 		
 		var _idxStart : int = _idxCursor;
 		
@@ -122,8 +128,8 @@ class DatFileParserWorker {
 		
 		_idxCursor++;
 		var sThisValue : String = _src.slice( _idxStart, _idxCursor -1 );
-		var ret : int = int( sThisValue );
-		return int( sThisValue );
+		var ret : uint = uint( sThisValue );
+		return uint( sThisValue );
 	}
 
 

@@ -1,5 +1,7 @@
 package sim
 {
+	import avmplus.getQualifiedClassName;
+	
 	import collision.CollisionDataProvider;
 	
 	import events.CollisionEvent;
@@ -20,8 +22,7 @@ package sim
 		
 			
 		private static var theWorldObjectFactory : WorldObjectFactory = null;		
-		private var map : Array = new Array();
-		
+		private var _map : Array = new Array();
 		
 		public static function Instance() : WorldObjectFactory {
 			if( null == theWorldObjectFactory ) {
@@ -38,39 +39,17 @@ package sim
 			return createWorldObj( _type, _bounds );
 		}
 	
+		public function register( id : String, klass : Class ) : void {
+			_map[id] = klass;			
+		}
 		
 		private function createWorldObj( _type:String, _bounds : Rectangle  ) : IWorldObject {
 			
-			switch(_type) {	
-				case "Launcher": return new LauncherSim( _type, _bounds );
-				case "Catapult": return new CatapultSim( _type, _bounds );
-				case "Trampoline": return new TrampolineSim( _type, _bounds );
-				case "Token_MakePlayerBigger": return new Token_MakePlayerBiggerSim( _type, _bounds );
-				case "Token_MakePlayerSmaller": return new Token_MakePlayerSmallerSim( _type, _bounds );							
-				case "SpringBoard": return new SpringBoardSim( _type, _bounds );
-				case "SpeedBoostCoin":
-					return new SpeedBoostCoinSim( _type, _bounds ); 
-				case "Brain":
-					return new BrainCoinSim( _type, _bounds );
-				case "Enemy_0":
-					return new EnemyBlobSim( _type, _bounds );
-				case "PlatformShort_elev":
-					return new ElevatorPlatformSim( _type, _bounds );
-				case "Column":  
-				case "Platform_Arc_0":
-				case "PlatformShort_0":
-				case "PlatformMedium_0":
-				case "PlatformLong_0": 			
-					return new LevelPlatformDataSim( _type, _bounds );
-					break;
-				case "PlatformMedium_15": 	
-				case "PlatformMedium_345": 
-					return new SlopedPlatformDataSim(_type, _bounds );
-					break;
-				default:
-					trace("unknown type encountered in createWorldObjData");					
+			var klass : Class = _map[_type];
+			if( !klass ) {
+				trace('ERROR -- could not createWorldObj ' + _type );
 			}
-			return null;	
+			return new klass(_type,_bounds);			
 		}
 	}
 	
@@ -115,6 +94,7 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObject {
 	protected var _querryMap : Array;
 	protected var _ICollisionData : ICollisionData;
 	private var _id : String;
+	
 	
 	
 	public function WorldObjSimBase( id : String, bounds : Rectangle ) {
@@ -180,11 +160,15 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObject {
 	
 	public function testCollision( iCol: ICollider ) : CollisionResult {
 	
+		if( id == 'Column' ) {
+			trace(id);
+		}
  		var r : Rectangle = iCol.bounds;
 		var v : Vector2  = CollisionManager.SAT_rectXrect( r, _bounds );	
+	
 		
-		
-		if( v ) {
+		if( v.isNotZero ) {
+			
 			if( _ICollisionData ) {
 				
 				var vTestPoints : Vector.<Point> = iCol.collisionTestPoints;
@@ -235,7 +219,19 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObject {
 	
 }
 
+class RegistrationAgent {
+	public static function register( ids : Array, klass : Class ) : void {
+		for each ( var id : String in ids ) {
+			WorldObjectFactory.Instance().register( id, klass );
+		}
+	}
+}
+
 class LauncherSim extends WorldObjSimBase {
+	
+	
+	RegistrationAgent.register( ['Launcher'], LauncherSim );
+	
 	private static const IMPULSE_Y : int = -40;
 	
 	public function LauncherSim( type : String, bounds : Rectangle ) 
@@ -250,6 +246,9 @@ class LauncherSim extends WorldObjSimBase {
 }
 
 class TrampolineSim extends WorldObjSimBase {
+
+	RegistrationAgent.register( ['Trampoline'], TrampolineSim );
+
 	
 	private static const VELOCITY_X : Number = 0;
 	private static const VELOCITY_Y : Number = -20;
@@ -266,6 +265,9 @@ class TrampolineSim extends WorldObjSimBase {
 
 class CatapultSim extends WorldObjSimBase {
 	
+	RegistrationAgent.register( ['Catapult'], CatapultSim );
+	
+	
 	private static const VELOCITY_X : Number = 36;  
 	private static const VELOCITY_Y : Number = -34;
 	
@@ -281,6 +283,8 @@ class CatapultSim extends WorldObjSimBase {
 
 class SpringBoardSim extends WorldObjSimBase {
 	
+	RegistrationAgent.register( ['SpringBoard'], SpringBoardSim );
+	
 	private static const IMPULSE_Y : int = -40;
 	
 	public function SpringBoardSim( type : String, bounds : Rectangle ) 
@@ -294,6 +298,8 @@ class SpringBoardSim extends WorldObjSimBase {
 }
 
 class SpeedBoostCoinSim extends WorldObjSimBase  {
+	
+	RegistrationAgent.register( ['SpeedBoostCoin'], SpeedBoostCoinSim );
 	
 	private static const DURATION_MS : int = 3000;
 	private static const SPEED_MULTIPLIER : Number = 2;
@@ -317,7 +323,9 @@ class SpeedBoostCoinSim extends WorldObjSimBase  {
 
 class Token_MakePlayerBiggerSim extends WorldObjSimBase {
 	
-	private static const DURATION_MS : int = 5000;
+	RegistrationAgent.register( ['Token_MakePlayerBigger'], Token_MakePlayerBiggerSim );
+	
+	private static const DURATION_MS : int = 4000;
 	private static const SCALE_TO_APPLY : Number = 1.50;
 	
 	public function Token_MakePlayerBiggerSim( type : String, bounds : Rectangle ) {
@@ -339,7 +347,9 @@ class Token_MakePlayerBiggerSim extends WorldObjSimBase {
 
 class Token_MakePlayerSmallerSim extends WorldObjSimBase {
 	
-	private static const DURATION_MS : int = 5000;
+	RegistrationAgent.register( ['Token_MakePlayerSmaller'], Token_MakePlayerSmallerSim );
+	
+	private static const DURATION_MS : int = 4000;
 	private static const SCALE_TO_APPLY : Number = 0.5;
 	
 	public function Token_MakePlayerSmallerSim( type : String, bounds : Rectangle ) {
@@ -362,15 +372,13 @@ class Token_MakePlayerSmallerSim extends WorldObjSimBase {
 
 class BrainCoinSim extends WorldObjSimBase  {
 	
+	RegistrationAgent.register( ['Brain'], BrainCoinSim );
+	
 	private static const BRAIN_COIN_VALUE : int = 1;
 	
 	public function BrainCoinSim( type : String, bounds : Rectangle ) {
 		super(type, bounds);
 		_querryMap.push('isConsumable');
-	}
-	
-	override public function testCollision( iCol: ICollider ) : CollisionResult {
-		return super.testCollision(iCol);
 	}
 	
 	override public function get isConsumable() : Boolean {
@@ -385,6 +393,8 @@ class BrainCoinSim extends WorldObjSimBase  {
 
 
 class ElevatorPlatformSim extends WorldObjSimBase  {
+	
+	RegistrationAgent.register( ['PlatformShort_elev'], ElevatorPlatformSim );
 	
 	private var theta : Number;
 	private var lastY : Number;
@@ -410,6 +420,8 @@ class ElevatorPlatformSim extends WorldObjSimBase  {
 }
 
 class EnemyBlobSim extends WorldObjSimBase  {
+	
+	RegistrationAgent.register( ['Enemy_0'] , EnemyBlobSim );
 	
 	private static const VELOCITY_X : Number = 1;
 	
@@ -470,12 +482,18 @@ class EnemyBlobSim extends WorldObjSimBase  {
 
 class LevelPlatformDataSim extends WorldObjSimBase  {
 	
+	RegistrationAgent.register( ["Column","Platform_Arc_0","PlatformShort_0","PlatformMedium_0","PlatformLong_0"], LevelPlatformDataSim );
+	
 	public function LevelPlatformDataSim( type : String, bounds : Rectangle ) {		
 		super(type,bounds);
 	}		
 }
 
 class SlopedPlatformDataSim extends WorldObjSimBase {
+
+	
+
+	RegistrationAgent.register( ["PlatformMedium_15","PlatformMedium_345"] , SlopedPlatformDataSim );
 	
 	private static const VERT_INDEX_UL : int = 0;
 	private static const VERT_INDEX_UR : int = 1;

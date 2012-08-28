@@ -8,7 +8,8 @@ package util
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	
-	import interfaces.IWorldObject;	
+	import interfaces.IWorldObject;
+	
 	import sim.PlayerSim;
 
 	
@@ -35,6 +36,8 @@ package util
 
 			for each( cr in results ) {
 				this.dispatchEvent( new CollisionEvent( CollisionEvent.PLAYERxWORLD, cr ) );
+				cr.collidedObj.onCollision( player );			
+
 			}
 		}
 
@@ -177,14 +180,30 @@ package util
 			
 			
 			public static function SAT_rectXrect( polygon1 : Rectangle, polygon2 : Rectangle ) : Vector2 {
-			
+				
+				var r : Rectangle = polygon1.intersection(polygon2);
+				
+				if( r.size.length ) {
+					var y : Number = r.top -r.bottom;
+					var x : Number = polygon2.left - r.right;  // same as: -(r.right-polygon2.left)			
+					
+					if( Math.abs(y) < Math.abs(x) ) {
+						return new Vector2( 0,y );
+					}
+					return new Vector2( x,0);
+					
+					//return new Vector2( x, y );
+				}
+				return new Vector2(0,0);
+/*			
 				var verts1:Vector.<Vector2> = buildVertArray( polygon1 ); //.vertices.concat();//these functions are in my polygon class, all they do is return a Vector.<Vector2D> of the vertices of the polygon
 				var verts2:Vector.<Vector2> = buildVertArray (polygon2) ; //.vertices.concat();
 				
 				var center1 : Point = center(polygon1);
 				var center2 : Point = center(polygon2) ;
 
-				return SAT_vertsXverts( center1, verts1, center2, verts2 ); 				
+				return SAT_vertsXverts( center1, verts1, center2, verts2 ); 	
+*/				
 			}	
 			
 			

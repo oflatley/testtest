@@ -77,16 +77,7 @@ package util
 			if( a.length ) {
 				var po : PoolObject = a.pop();
 				
-				if( null == po ) {
- 					trace('bismark');
-				}
-				
 				activeList.push( po );
-				
-				if( null == po.movieClipView ) {
-					trace('denmark');
-				}
-				
 				po.movieClipView.active = true;
 				return po.iWorldObj; 
 			}

@@ -41,7 +41,7 @@ package sim
 		private var _bounds : Rectangle = new Rectangle();	
 		private var _originalSpan : Point = new Point(); // support for scaling
 		private var _scaleOffsetY : Number = 0;  // support for scaling
-
+		private var _collisionList : Array = new Array();
 		private var _localCollisionTestPoints : Vector.<Point> = new Vector.<Point>(4);
 		private var _collisionTestPointsWalking : Vector.<Point> = new Vector.<Point>(1);
 		private var _collisionTestPointsJumping : Vector.<Point> = new Vector.<Point>(4);
@@ -115,7 +115,7 @@ package sim
 			
 			view.SetPosition( _bounds.topLeft );
  			view.scale( n );
-			setInterval( restoreNormalScale, duration/5 );
+			setInterval( restoreNormalScale, duration );
 		} 
 		
 		private function restoreNormalScale() : void  {
@@ -145,21 +145,29 @@ package sim
 		public function Update() : void {
 			trace( (_objectUnderfootPreviousFrame != null) + ' ' + (_objectUnderfootThisFrame != null) ); 
 
-  			var pos:Vector2 = new Vector2();
-			pos.x += _velocity.x * _speedMultiplier;
+			move(velocity);
+			applyPendingCollisions();
+			
+  			//var pos:Vector2 = new Vector2();
+			//pos.x += _velocity.x * _speedMultiplier;
 
 			_velocity.x -= _dragX;
 			if( _velocity.x < velocityX ) {
 				_velocity.x = velocityX;
 			}
 			
-			_velocity.y += gravity;
-			if( _velocity.y > terminalVelocity ) {
-				_velocity.y = terminalVelocity;
+			if(_objectUnderfootThisFrame ) {
+				_velocity.y = gravity;
+			} else {
+				_velocity.y += gravity;
+
+				if( _velocity.y > terminalVelocity ) {
+					_velocity.y = terminalVelocity;
+				}
 			}
 						
-			pos.y += _velocity.y;			
-			move( pos ); 		
+//			pos.y += _velocity.y;			
+//			move( pos ); 		
 			
 			_objectUnderfootPreviousFrame = _objectUnderfootThisFrame;
 			_objectUnderfootThisFrame = null; 			
@@ -167,27 +175,34 @@ package sim
 
 		
 		private function move( v:Vector2 ) : void {			
-			
-			worldPosition = new Point( v.x + worldPosition.x, v.y + worldPosition.y);
+			move_xy( v.x, v.y );
+		}
+		
+		private function move_xy( x : Number, y : Number ) : void {
+			worldPosition = new Point( x + worldPosition.x, y + worldPosition.y);
 			buildCollisionTestPoints();			
 		}
 		
 		private function onJump( e:Event ) : void {
 			if( canJump ) {
-				_velocity.y -= 25;
+				_velocity.y -= 20;
+				_objectUnderfootThisFrame = null;
 			}
 			else {
-				trace('jump denied');
+ 				trace('jump denied');
 			}
 		}
 
-		private function applyCollision( cr : CollisionResult ) : void {
- 			var wo : IWorldObject = cr.collidedObj;
+		private function applyCollision( cr : CollisionResult ) : Vector2 {
+ 			
+			var wo : IWorldObject = cr.collidedObj;
 			var v : Vector2 = cr.msv;
 			
 			if( v.y < 0 ) {
 				_objectUnderfootThisFrame = wo;
 			}
+			
+			
 			
 			if( wo.isMonster ) {
 				
@@ -202,31 +217,65 @@ package sim
 					_isCollideable = false;
 					setInterval( restoreCollisionEnabled, 1000 );
 				}
+				v.setxy(0,0);
 			}
+			else if( wo.isConsumable ) {
+				v.setxy(0,0);	
+			}				
 			else
 			{
 				var bCollisionFromBelow : Boolean = v.y > 0;
 				
 				if( bCollisionFromBelow && !wo.isCollideableFromBelow ) {
-					
+					v.setxy(0,0)
 				}
-				else {
+				else { 					
 					if( _objectUnderfootThisFrame ) {
-						v.x = 0;		// walking, dont apply x, only want to match surface height
+						
+						if( _objectUnderfootThisFrame == wo ) {
+							// walking, dont apply x, only want to match surface height
+							v.x = 0;
+						}
+						else {
+							v.y = 0;
+						}
 					}
 					else {
 						// in jumping/falling, apply collisions as follows:
 						v.y = 0;
 					}
-						
 					
-					move( v );
-					cr.collidedObj.onCollision( this );			
+					//move( v );
+  					velocity.x += v.x;
+					velocity.y += v.y;
 				}
+			}
+			return v;
+		}
+		
+		private function applyPendingCollisions() : void {
+			
+			var len : int = _collisionList.length;
+			
+			if( len ) {
+				var minX : Number = Infinity;
+				var minY : Number = Infinity;
+				
+				for each( var cr : CollisionResult in _collisionList ) {
+					var v : Vector2 = applyCollision( cr );
+					minX = Math.min( v.x, minX );
+					minY = Math.min( v.y, minY );
+					move(v);
+				}
+				
+				// TODO, this assumes collision going down and to the right -- fix it
+				move_xy( minX, minY ); 
+				_collisionList.splice( 0 , _collisionList.length );		
 			}
 		}
 		
 		private function onCollision_playerVsWorld( collisionEvent : CollisionEvent ) : void {		
+			//_collisionList.push( collisionEvent.collisionResult );
 			applyCollision( collisionEvent.collisionResult );		
 		}
 		
