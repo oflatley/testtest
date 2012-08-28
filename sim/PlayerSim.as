@@ -204,7 +204,7 @@ package sim
 			
 			
 			
-			if( wo.isMonster ) {
+			if( wo.querry( WorldObjectFactory.Q_MONSTER ) ) {  //.isMonster ) {
 				
 				if( v.y < 0 && -v.y > Math.abs(v.x) ) {
 					// player hit monster from above --> Kill the monster
@@ -219,14 +219,14 @@ package sim
 				}
 				v.setxy(0,0);
 			}
-			else if( wo.isConsumable ) {
+			else if( wo.querry( WorldObjectFactory.Q_CONSUMABLE ) ) { //isConsumable ) {
 				v.setxy(0,0);	
 			}				
 			else
 			{
 				var bCollisionFromBelow : Boolean = v.y > 0;
 				
-				if( bCollisionFromBelow && !wo.isCollideableFromBelow ) {
+				if( bCollisionFromBelow && !wo.querry( WorldObjectFactory.Q_COLLIDEABLE_FROM_BELOW )){ //  !wo.isCollideableFromBelow ) {
 					v.setxy(0,0)
 				}
 				else { 					

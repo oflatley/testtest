@@ -20,6 +20,11 @@ package sim
 	
 	public class WorldObjectFactory {
 		
+		// querry strings
+		public static const Q_CONSUMABLE : String = "consumable_q";
+		public static const Q_MONSTER : String = "monster_q";
+		public static const Q_COLLIDEABLE_FROM_BELOW : String = "collideBelow_q";
+		
 			
 		private static var theWorldObjectFactory : WorldObjectFactory = null;		
 		private var _map : Array = new Array();
@@ -91,7 +96,7 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObject {
 	protected var _collisionImpulse : Point;
 	protected var _collisionResult : CollisionResult;
 	protected var _bounds : Rectangle;
-	protected var _querryMap : Array;
+	private var _querryMap : Array;
 	protected var _ICollisionData : ICollisionData;
 	private var _id : String;
 	
@@ -123,23 +128,10 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObject {
 		_bounds = r;
 	}
 	
-	public function querry( s : String ) : Boolean {
-		return null != _querryMap[s]; // indexOf ??
+	public function querry( s : String ) : Boolean {		
+		return _querryMap.indexOf(s) >= 0;
 	}
 	
-	
-	public function get isConsumable():Boolean
-	{
-		return false;
-	}
-	
-	public function get isMonster() : Boolean {
-		return false;
-	}
-	
-	public function get isCollideableFromBelow() : Boolean {
-		return true;
-	}
 	
 	public function onCollision(player:PlayerSim):void
 	{
@@ -217,6 +209,9 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObject {
 		return this;
 	}
 	
+	public function registerQuerry( q : String ) : void  {
+		_querryMap.push(q);
+	}
 }
 
 class RegistrationAgent {
@@ -307,12 +302,7 @@ class SpeedBoostCoinSim extends WorldObjSimBase  {
 	
 	public function SpeedBoostCoinSim( type : String, bounds : Rectangle ) {
 		super(type, bounds);
-		_querryMap.push('isConsumable');
-	}
-	
-	override public function get isConsumable():Boolean
-	{
-		return true;
+		registerQuerry( WorldObjectFactory.Q_CONSUMABLE );
 	}
 	
 	override public function onCollision(player:PlayerSim):void
@@ -330,12 +320,7 @@ class Token_MakePlayerBiggerSim extends WorldObjSimBase {
 	
 	public function Token_MakePlayerBiggerSim( type : String, bounds : Rectangle ) {
 		super(type,bounds);
-		_querryMap.push('isConsumable');		
-	}
-	
-	override public function get isConsumable():Boolean
-	{
-		return true;
+		registerQuerry( WorldObjectFactory.Q_CONSUMABLE );
 	}
 	
 	override public function onCollision(player:PlayerSim):void
@@ -354,12 +339,7 @@ class Token_MakePlayerSmallerSim extends WorldObjSimBase {
 	
 	public function Token_MakePlayerSmallerSim( type : String, bounds : Rectangle ) {
 		super(type,bounds);
-		_querryMap.push('isConsumable');
-	}
-	
-	override public function get isConsumable():Boolean
-	{
-		return true;
+		registerQuerry( WorldObjectFactory.Q_CONSUMABLE );
 	}
 	
 	override public function onCollision(player:PlayerSim):void
@@ -378,13 +358,9 @@ class BrainCoinSim extends WorldObjSimBase  {
 	
 	public function BrainCoinSim( type : String, bounds : Rectangle ) {
 		super(type, bounds);
-		_querryMap.push('isConsumable');
+		registerQuerry( WorldObjectFactory.Q_CONSUMABLE );
 	}
-	
-	override public function get isConsumable() : Boolean {
-		return true;
-	}
-	
+		
 	override public function onCollision( player:PlayerSim ) : void {
 		player.addCoins( BRAIN_COIN_VALUE );
 	}
@@ -434,11 +410,7 @@ class EnemyBlobSim extends WorldObjSimBase  {
 		super(type,bounds);
 		pImpulse = new Point();
 		dir = -1;		// start walking left
-		_querryMap.push('isMonster');
-	}
-	
-	override public function get isMonster() : Boolean {
-		return true;
+		registerQuerry( WorldObjectFactory.Q_MONSTER );
 	}
 	
 	override public function update():void

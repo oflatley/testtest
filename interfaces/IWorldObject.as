@@ -23,9 +23,9 @@ package interfaces {
 		function update() : void;
 		function onCollision( player : PlayerSim ) : void;
 		
-		function get isConsumable() : Boolean;
-		function get isMonster() : Boolean;
-		function get isCollideableFromBelow() : Boolean;
+		//function get isConsumable() : Boolean;
+		//function get isMonster() : Boolean;
+		//function get isCollideableFromBelow() : Boolean;
 		function querry( s : String ) : Boolean; 
 	
 		function get eventDispatcher() : EventDispatcher;

@@ -96,7 +96,7 @@ package
 			playerSim = new PlayerSim(new Controller(stage), velocityX, gravity, playerView, collisionManager );
 			playerSim.SetPosition( new Point( 10,405 ) );
 	
-  			currentLevel = new Level("Level1",collisionManager,playerSim);
+  			currentLevel = new Level("Level0",collisionManager,playerSim);
 			onResize( null );
 			addEventListener(Event.RESIZE, onResize );
  			addEventListener(Event.ENTER_FRAME, onEnterFrame );

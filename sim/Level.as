@@ -169,7 +169,7 @@ package sim
 			_objectsToRemove.length = 0;
 			
 			for each( var cr : CollisionResult in collisionsToProcess ) {
-				if( cr.collidedObj.isConsumable) {
+				if( cr.collidedObj.querry( WorldObjectFactory.Q_CONSUMABLE ) ) { // isConsumable) {
 					removeObject( cr.collidedObj );
 					var ndx : int = cr.collidedObj.bounds.right / bucketWidth;
 					ar = buckets_endX[ndx];
