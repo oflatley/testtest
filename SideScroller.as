@@ -47,10 +47,9 @@ package
 
 		private static const objPoolAllocs : Array = [
 			
-			{type:"Platform_Arc_0" , 	count:5 },
+			{type:"Platform_Arc_0" , 	count:3 },
 		
-		{type:"PlatformShort_0" , 	count:12 },
-/*			
+			{type:"PlatformShort_0" , 	count:12 },			
 			{type:"PlatformMedium_0", 	count:10 },
 			{type:"PlatformMedium_15", 	count:10 },
 			{type:"PlatformMedium_345", count:10 },
@@ -66,7 +65,6 @@ package
 			{type:"Trampoline", count:3 },
 			{type:"Launcher",count:5 },
 			{type:"Catapult",count:3 },
-*/
 			];
 
 		
@@ -96,9 +94,9 @@ package
 			var playerView : PlayerView = new PlayerView(  );
 			playerView.AddToScene( screenContainer.container );
 			playerSim = new PlayerSim(new Controller(stage), velocityX, gravity, playerView, collisionManager );
-			playerSim.SetPosition( new Point( 10,425 ) );
+			playerSim.SetPosition( new Point( 10,405 ) );
 	
-  			currentLevel = new Level("Level1",collisionManager,playerSim);
+  			currentLevel = new Level("Level0",collisionManager,playerSim);
 			onResize( null );
 			addEventListener(Event.RESIZE, onResize );
  			addEventListener(Event.ENTER_FRAME, onEnterFrame );

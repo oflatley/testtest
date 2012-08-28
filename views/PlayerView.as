@@ -13,52 +13,56 @@ package views
 	public class PlayerView
 	{
 		private var mc:MovieClip;;
-		private var _debugBoundMC : MovieClip;
+		private var _debugTP : Array = new Array(10);
 
 		public function PlayerView()
 		{
 			mc = ObjectPool.Instance().playerMC; // for swc: new Player();
 			
-			_debugBoundMC = ObjectPool.Instance().getDebugBoundingBox();
-			_debugBoundMC.x = mc.x;
-			_debugBoundMC.y = mc.y;
-			_debugBoundMC.width = mc.width;
-			_debugBoundMC.height = mc.height;
 			
-			
+			for( var i : int = 0; i < _debugTP.length; ++i ) {
+				_debugTP[i] = ObjectPool.Instance().getDebugBoundingBox();
+				_debugTP[i].width = 3;
+				_debugTP[i].height = 3;
+			}
+		}
+		
+		public function drawTestPoints( v : Vector.<Point> ) : void {
+			for( var i : int = 0; i < _debugTP.length; ++i ) {
+					
+				var mc : MovieClip = _debugTP[i];
+					
+				if( i < v.length ) {					
+					mc.x = v[i].x - 1;
+					mc.y = v[i].y - 1;
+					mc.visible = true;
+				} else {
+					mc.visible = false;
+				}
+			}
 		}
 		
 		public function SetPosition( p:Point ) : void {
 			mc.x = p.x;
 			mc.y = p.y;
-	
-			_debugBoundMC.x = p.x;
-			_debugBoundMC.y = p.y;
-			
 		}
 		
 		public function AddToScene( scene:Sprite ) : void {
 			scene.addChild(mc);
-			scene.addChild(_debugBoundMC);
+			
+			for( var i : int = 0; i < _debugTP.length; ++i ) {
+				scene.addChild( _debugTP[i] );
+			}
 	
 		}
 		
 		public function getBounds() : Rectangle {
 			return new Rectangle( mc.x, mc.y, mc.width, mc.height );
-
-			
-			//player mc has registration point in mid-bottom -- we fix it up so that the bounds is as if registration is upperleft (like our world objects)			
-		//	return new Rectangle( mc.x - mc.width/2, mc.y - mc.height, mc.width, mc.height );	
-			
-			
 		}
 		
 		public function scale( n : Number ) : void {
 			mc.scaleX = n;
 			mc.scaleY = n; 
-			
-			_debugBoundMC.scaleX = n;
-			_debugBoundMC.scaleY = n;
 		}
 	}
 }

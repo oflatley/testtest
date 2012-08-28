@@ -6,10 +6,7 @@ package interfaces
 
 	public interface ICollisionData
 	{
-		//function get data() : Array;
 		function testPoint( p : Point ) : Vector2 ;
-		function testxy( x : int, y : int ) : Vector2;
-		
-		
+		function testxy( x : Number, y : Number ) : Vector2;
 	}
 }

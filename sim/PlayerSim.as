@@ -36,13 +36,16 @@ package sim
 		private var _speedMultiplier : Number = 1.0;
 		private var _isCollideable : Boolean = true;
 		private var _dragX:Number = 2;
-		private var _objectCurrentlyUnderfoot:IWorldObject = null;
-		private var _bounds : Rectangle = new Rectangle();
-		
+		private var _objectUnderfootThisFrame:IWorldObject = null;
+		private var _objectUnderfootPreviousFrame:IWorldObject = null;
+		private var _bounds : Rectangle = new Rectangle();	
+		private var _originalSpan : Point = new Point(); // support for scaling
+		private var _scaleOffsetY : Number = 0;  // support for scaling
 
-		private static const HIT_POINT_COUNT : int = 4;
-		private var _localCollisionTestPoints : Vector.<Point> = new Vector.<Point>(HIT_POINT_COUNT);
-		private var _collisionTestPoints : Vector.<Point> = new Vector.<Point>(HIT_POINT_COUNT);
+		private var _localCollisionTestPoints : Vector.<Point> = new Vector.<Point>(4);
+		private var _collisionTestPointsWalking : Vector.<Point> = new Vector.<Point>(1);
+		private var _collisionTestPointsJumping : Vector.<Point> = new Vector.<Point>(4);
+		private var _collisionTestPointsJumpingUp : Vector.<Point> = new Vector.<Point>(5);
 		private var _registrationPointOffset:Point;
 		
 		public function PlayerSim( controller:Controller, velX:Number, _gravity:Number, _playerView:PlayerView, _collisionMgr : CollisionManager )
@@ -51,37 +54,45 @@ package sim
 			reset();
 				
 			velocityX = velX;
-			gravity = _gravity;			
+			gravity = _gravity ;			
 			view = _playerView;			
 			playerController = controller;
 			
 			playerController.addEventListener(ControllerEvent.JUMP, onJump );		
 			_collisionMgr.addEventListener(CollisionEvent.PLAYERxWORLD, onCollision_playerVsWorld );
 		
-			_bounds = _playerView.getBounds();	
-			//_registrationPointOffset = new Point( 0, -_bounds.y );
-	
-			// set bounds upper left 
-			//_bounds.x += _registrationPointOffset.x;
-			//_bounds.y += _registrationPointOffset.y;
+			_bounds = _playerView.getBounds().clone();	
+			_originalSpan.offset( _bounds.width, _bounds.height );
+
+			initLocalCollisionTestPoints(1);	
+			initCollisionTestPoints( _collisionTestPointsWalking );
+			initCollisionTestPoints( _collisionTestPointsJumping );
+			initCollisionTestPoints( _collisionTestPointsJumpingUp );			
+		}
+		
+		private function initLocalCollisionTestPoints( scale : Number ) : void {
 			
+			var right : Number = scale * _originalSpan.x;
+			var bottom : Number = scale * _originalSpan.y;
+			var halfW : Number = _originalSpan.x / 2;
+			var halfH : Number = _originalSpan.y / 2;
 			
-			var halfW : Number = _bounds.width / 2;
-			var halfH : Number = _bounds.height / 2;
-			
-			_localCollisionTestPoints[0] = new Point( _bounds.left + halfW, 	_bounds.bottom );		// bottom mid
-			_localCollisionTestPoints[1] = new Point( _bounds.right,  			_bounds.top + halfH ); 	// mid right
-			_localCollisionTestPoints[2] = new Point( _bounds.left + halfW, 	_bounds.top ); 			// mid top
-			_localCollisionTestPoints[3] = new Point( _bounds.left, 			_bounds.top + halfH ); 	// mid lef
-			
-			for( var i : int = 0 ; i < HIT_POINT_COUNT; ++i ) {
-				_collisionTestPoints[i] = new Point();
+			_localCollisionTestPoints[0] = new Point( halfW, 		bottom );		// bottom mid
+			_localCollisionTestPoints[1] = new Point( right,  		.75 * bottom ); 	// right, bottom .25
+			_localCollisionTestPoints[2] = new Point( right, 		.5 * bottom  ); 	// right, mid
+			_localCollisionTestPoints[3] = new Point( right, 		.25	 * _bounds.height); 	// right, top.75
+			_localCollisionTestPoints[4] = new Point( right, 			0  ); 							// right, mid
+			_localCollisionTestPoints[5] = new Point( right - halfW,	0); 								// right, top.75			
+		}
+		
+		private function initCollisionTestPoints( v : Vector.<Point> ) : void {
+			for( var i : int = 0; i < v.length; ++i ) {
+				v[i] = new Point();
 			}
-			
 		}
 		
 		private function get canJump() : Boolean {
-			return _objectCurrentlyUnderfoot && _isCollideable;
+			return _objectUnderfootThisFrame && _isCollideable;
 		}
 
 		private function reset(): void {
@@ -93,11 +104,27 @@ package sim
 		}
 		
 		public function scale( n : Number, duration : Number ) : void {
+		
+			var h : Number = _originalSpan.y * n;
+			_scaleOffsetY = _bounds.height - h;
+			
+			_bounds.y = _bounds.bottom - h;			
+ 			_bounds.width = _originalSpan.x * n;
+			_bounds.height = h;
+			initLocalCollisionTestPoints(n);
+			
+			view.SetPosition( _bounds.topLeft );
  			view.scale( n );
-			setInterval( restoreNormalScale, duration );
-		}
+			setInterval( restoreNormalScale, duration/5 );
+		} 
 		
 		private function restoreNormalScale() : void  {
+			_bounds.width = _originalSpan.x;
+			_bounds.height = _originalSpan.y;
+			_bounds.y -= _scaleOffsetY;
+		
+			initLocalCollisionTestPoints(1);
+			view.SetPosition( _bounds.topLeft );
 			view.scale( 1 );
 		}
 		
@@ -115,13 +142,10 @@ package sim
 			_speedMultiplier = 1;
 		}
 		
-//		public function getBounds() : Rectangle {
-//			return _bounds;
-			//return view.getBounds();/
-//		}
-		
 		public function Update() : void {
-			var pos:Vector2 = new Vector2();
+			trace( (_objectUnderfootPreviousFrame != null) + ' ' + (_objectUnderfootThisFrame != null) ); 
+
+  			var pos:Vector2 = new Vector2();
 			pos.x += _velocity.x * _speedMultiplier;
 
 			_velocity.x -= _dragX;
@@ -137,19 +161,10 @@ package sim
 			pos.y += _velocity.y;			
 			move( pos ); 		
 			
-			_objectCurrentlyUnderfoot = null; // clear for next time through. note that collision detection will occur before next call to PlayerSim.update
+			_objectUnderfootPreviousFrame = _objectUnderfootThisFrame;
+			_objectUnderfootThisFrame = null; 			
 		}
 
-		private function buildCollisionTestPoints() : void {
-
-			for( var i : int = 0; i < HIT_POINT_COUNT; ++i ) {
-				var src : Point = _localCollisionTestPoints[i];
-				var dst : Point = _collisionTestPoints[i];				
-				dst.x = src.x + _bounds.x;
-				dst.y = src.y + _bounds.y;				
-			}
-
-		}
 		
 		private function move( v:Vector2 ) : void {			
 			
@@ -171,7 +186,7 @@ package sim
 			var v : Vector2 = cr.msv;
 			
 			if( v.y < 0 ) {
-				_objectCurrentlyUnderfoot = wo;
+				_objectUnderfootThisFrame = wo;
 			}
 			
 			if( wo.isMonster ) {
@@ -196,7 +211,15 @@ package sim
 					
 				}
 				else {
-					v.x = 0;		// TODO -- this assume walking
+					if( _objectUnderfootThisFrame ) {
+						v.x = 0;		// walking, dont apply x, only want to match surface height
+					}
+					else {
+						// in jumping/falling, apply collisions as follows:
+						v.y = 0;
+					}
+						
+					
 					move( v );
 					cr.collidedObj.onCollision( this );			
 				}
@@ -214,14 +237,11 @@ package sim
 		
 		public function get worldPosition():Point
 		{
-			return _bounds.topLeft; //_worldPosition;
+			return _bounds.topLeft; 
 		}
 
-
-		
 		public function set worldPosition(value:Point):void
 		{
-			//_worldPosition = value;
 			_bounds.x = value.x;
 			_bounds.y = value.y;
 			view.SetPosition( value );
@@ -229,19 +249,49 @@ package sim
 		}
 		
 		public function SetPosition( value:Point) : void {
-			worldPosition = value;
+ 			worldPosition = value;
 			buildCollisionTestPoints();
 		}
 		
 		public function get bounds():Rectangle
 		{
 			return _bounds; 
-			//return view.getBounds(); 
 		}
 		
 		public function get collisionTestPoints():Vector.<Point>
 		{
-			return _collisionTestPoints;
+			if( _objectUnderfootThisFrame ) {
+				return _collisionTestPointsWalking;
+			}
+			
+			if( _velocity.y < 0 ) { // we are ascending and jumping 
+				return _collisionTestPointsJumpingUp;
+			}
+			return _collisionTestPointsJumping;
+		}
+		
+		private function buildCollisionTestPoints() : void {
+			
+			_collisionTestPointsWalking[0].x = _localCollisionTestPoints[0].x + _bounds.x;
+			_collisionTestPointsWalking[0].y = _localCollisionTestPoints[0].y + _bounds.y;
+
+			for( var i : int = 0; i < _collisionTestPointsJumping.length; ++i ) {
+				_collisionTestPointsJumping[i].x = _localCollisionTestPoints[i].x + _bounds.x;
+				_collisionTestPointsJumping[i].y = _localCollisionTestPoints[i].y + _bounds.y;				
+			}
+			
+			_collisionTestPointsJumpingUp[0].x = _localCollisionTestPoints[5].x + _bounds.x;
+			_collisionTestPointsJumpingUp[0].y = _localCollisionTestPoints[5].y + _bounds.y;
+			_collisionTestPointsJumpingUp[1].x = _localCollisionTestPoints[4].x + _bounds.x;
+			_collisionTestPointsJumpingUp[1].y = _localCollisionTestPoints[4].y + _bounds.y;
+			_collisionTestPointsJumpingUp[2].x = _localCollisionTestPoints[3].x + _bounds.x;
+			_collisionTestPointsJumpingUp[2].y = _localCollisionTestPoints[3].y + _bounds.y;
+			_collisionTestPointsJumpingUp[3].x = _localCollisionTestPoints[2].x + _bounds.x;
+			_collisionTestPointsJumpingUp[3].y = _localCollisionTestPoints[2].y + _bounds.y;
+			_collisionTestPointsJumpingUp[4].x = _localCollisionTestPoints[1].x + _bounds.x;
+			_collisionTestPointsJumpingUp[4].y = _localCollisionTestPoints[1].y + _bounds.y;
+			
+			view.drawTestPoints( collisionTestPoints );
 		}
 		
 		public function get velocity():Vector2

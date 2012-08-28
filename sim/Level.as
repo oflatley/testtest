@@ -25,7 +25,7 @@ package sim
 	public class Level
 	{
 		private static const nBucketsOffscreenOnRight : int = 1;
-		private static const bucketSlices : int = 96;
+		private static const bucketSlices : int = 8;
 		private static const bucketWidth : int = 960 / bucketSlices ;
 		private var buckets_startX:Array;
 		private var buckets_endX:Array;

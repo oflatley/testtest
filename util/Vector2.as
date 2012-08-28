@@ -15,6 +15,10 @@ package util
 			return new Vector2( vB.x - vA.x, vB.y - vA.y );
 		}
 		
+		public function get isNotZero() : Boolean {
+			return _p.x || _p.y;
+		}
+		
 		public function setxy( x : Number, y : Number ) : void {
 			_p.x = x;
 			_p.y = y;

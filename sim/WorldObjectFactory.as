@@ -180,41 +180,33 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObject {
 	
 	public function testCollision( iCol: ICollider ) : CollisionResult {
 	
-		var r : Rectangle = iCol.bounds;
+ 		var r : Rectangle = iCol.bounds;
 		var v : Vector2  = CollisionManager.SAT_rectXrect( r, _bounds );	
 		
 		
 		if( v ) {
 			if( _ICollisionData ) {
 				
-				var testPoint : Point = iCol.collisionTestPoints[0];
-				var testPointdebug : Point = new Point( (r.x + r.width)/2, r.bottom );
+				var vTestPoints : Vector.<Point> = iCol.collisionTestPoints;
+				var count : int = vTestPoints.length
 				
-				if( testPoint.x != testPointdebug.x && testPoint.y != testPointdebug.y ) {
-					trace('asdfasdfasdfasdf');
+				for( var i : int = 0; i < count; ++i ) {
+					var testPoint : Point = vTestPoints[i];
+					
+					var localPoint : Point = testPoint.subtract(_bounds.topLeft );
+					var msv : Vector2 = _ICollisionData.testPoint( localPoint );				
+					
+					if( msv.isNotZero ) {					
+						return new CollisionResult( 0,msv,this ); 
+					}
 				}
 				
-				var localPoint : Point = testPoint.subtract(_bounds.topLeft );
-				var msv : Vector2 = _ICollisionData.testPoint( localPoint );
-				
-				return new CollisionResult( 0,msv,this ); 
-				
-				//return b ? new CollisionResult(0,v,this) : null;
 				
 			} else {
 				return new CollisionResult(0,v,this) ;			
 			}
 		} 
 		return null;
-		/*		
-		var cr : CollisionResult = CollisionManager.SAT_rxr( r, _bounds, new Vector2(0,0) );
-		
-		if( cr.Intersect ) {
-			cr.collidedObj = this;
-			return cr;
-		}
-		return null;
-*/		
 	}
 	
 	public function offset(p:Point):void
@@ -375,6 +367,10 @@ class BrainCoinSim extends WorldObjSimBase  {
 	public function BrainCoinSim( type : String, bounds : Rectangle ) {
 		super(type, bounds);
 		_querryMap.push('isConsumable');
+	}
+	
+	override public function testCollision( iCol: ICollider ) : CollisionResult {
+		return super.testCollision(iCol);
 	}
 	
 	override public function get isConsumable() : Boolean {

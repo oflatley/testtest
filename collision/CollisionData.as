@@ -8,21 +8,14 @@ package collision {
 	
 	public class CollisionData implements ICollisionData {
 
-	//	private var vResult : Vector2 = new Vector2();
-		
-		//public function get data() :  { return _data; }
-//		public function testPoint(p:Point) : Boolean { return testxy( p.x, p.y ); }
-//		public function testxy( x : int, y:int ) : Boolean  {
-//			if( x < _width && y < _height ) 
-//				return _data[y*_width + x];
-//			return false;
-//		}
 
 		public function testPoint( p : Point ) : Vector2 {
 			return testxy( p.x, p.y );
 		}
-		public function testxy( x : int, y:int ) : Vector2  {
+		public function testxy( _x : Number, _y:Number ) : Vector2  {
 		
+			var x : int = Math.floor( _x + .5 );
+			var y : int = Math.floor( _y + .5 );
 			var vResult : Vector2 = new Vector2(0,0);
 			
 			if( x < _width && x >= 0 && y < _height && y >= 0 && _data[y*_width + x] ) {

@@ -105,6 +105,7 @@ package util
 			
 			if( i < activeList.length ) {
 				var po : PoolObject = activeList.splice( i, 1 )[0] as PoolObject;
+				po.movieClipView.active = false;
 				poolMap[wo.id].push( po );
 			} else {
 				trace('ERROR -- could not recycleObj in ObjectPool ');
