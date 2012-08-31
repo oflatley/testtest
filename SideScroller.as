@@ -21,6 +21,8 @@ package
 	
 	import interfaces.ICollisionData;
 	
+	import levels.LevelFactory;
+	
 	import sim.Level;
 	import sim.PlayerSim;
 	
@@ -34,6 +36,8 @@ package
 	[SWF(width='960', height='640')]
 	public class SideScroller extends Sprite
 	{
+		LevelFactory;
+		
 		private var collisionManager : CollisionManager;
 		private var playerMC : MovieClip;
 		private static const velocityX:Number = 2.5;
@@ -47,7 +51,8 @@ package
 
 		private static const objPoolAllocs : Array = [
 			
-			{type:"Platform_Arc_0" , 	count:5 },		
+			{type:"Platform_Arc_0" , 	count:1 },
+/*			
 			{type:"PlatformShort_0" , 	count:12 },			
 			{type:"PlatformMedium_0", 	count:10 },
 			{type:"PlatformMedium_15", 	count:10 },
@@ -64,25 +69,23 @@ package
 			{type:"Trampoline", count:3 },
 			{type:"Launcher",count:5 },
 			{type:"Catapult",count:3 },
-			
+*/			
 			];
 
 		
 		public function SideScroller()
 		{
 			super();
-
+			
 			collisionManager = new CollisionManager();
 			screenContainer = ScreenContainer.Instance();
-			addChild( screenContainer.container );			
-			
-			ObjectPool.Instance().buildMovieClipClasses( 'assets/assets.swf', init); // if using swf
-			
+			addChild( screenContainer.container );						
+			ObjectPool.instance.buildMovieClipClasses( 'assets/assets.swf', init); // if using swf			
 			// swc: loadData()  ;
 		}
 		
 		private function init(): void {
-			CollisionDataProvider.instance.buildCollisionData("data/collisionObj/collisionData.dat", startGame );
+			CollisionDataProvider.instance.buildCollisionData("data/collisionObj/collisionData.xml", startGame );
 		}
 		
 		private function startGame():void{
@@ -90,14 +93,14 @@ package
 			stage.color = 0x444444;
 			stage.frameRate = 60;
 			
-			ObjectPool.Instance().initialize( objPoolAllocs, screenContainer );
+			ObjectPool.instance.initialize( objPoolAllocs, screenContainer );
 			var playerView : PlayerView = new PlayerView(  );
 			playerView.AddToScene( screenContainer.container );
 			playerSim = new PlayerSim(new Controller(stage), velocityX, gravity, playerView.getBounds(), collisionManager );
-			playerSim.SetPosition( new Point( 10,405 ) );
 			playerView.initEventListeners( playerSim );
+			playerSim.SetPosition( new Point( 10,405 ) );
 	
-  			currentLevel = new Level("Level0",collisionManager,playerSim);
+  			currentLevel = LevelFactory.instance.generateLevel("Level0", collisionManager, playerSim );
 			onResize( null );
 			addEventListener(Event.RESIZE, onResize );
  			addEventListener(Event.ENTER_FRAME, onEnterFrame );

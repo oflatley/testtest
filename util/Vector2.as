@@ -8,7 +8,9 @@ package util
 		
 		public function Vector2( x:Number = 0, y : Number = 0)
 		{
+			trace( x + ' -- ' + y );
 			_p = new Point( x,y );
+			trace( this.x + ' -- ' + this.y );
 		}
 		
 		public static function subtract( vA : Vector2, vB : Vector2 ) : Vector2{
@@ -30,16 +32,16 @@ package util
 		
 		public function get x():Number 
 		{			
-			return _p.x;;
-		}
-		
-		public function get y():Number { 
-			return _p.y;				
+			return _p.x;
 		}
 		
 		public function set x(value:Number):void 
 		{
 			_p.x = value;	
+		}
+		
+		public function get y():Number { 
+			return _p.y;				
 		}
 
 		public function set y(value:Number):void 

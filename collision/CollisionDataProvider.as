@@ -62,6 +62,22 @@ class DatFileParser {
 	
 	protected function onDataLoaded(event:Event):void
 	{	
+		var xml : String = event.target.data as String;
+		var json : Object = JSON.parse( xml );
+		
+		var aWO : Array = json.worldObjects;
+		for each( var wo : * in aWO ) {
+			var w : int = wo.dims.w;
+			var h : int = wo.dims.h;
+			var s : String = wo.name;
+			var bv : Array = wo.collisionBits;
+			
+			_map[s] = new CollisionData( w, h, bv );
+		}
+		
+		_completedCallback();
+		
+/*		
 		var ss : String = event.target.data as String;
 		var ssSplits : Array = ss.split( /\s+/ );
 		var idxCursor : int = 0;
@@ -92,6 +108,7 @@ class DatFileParser {
 			}
 		}
 		_completedCallback();
+*/		
 	}	
 
 

@@ -31,7 +31,7 @@ package util
 		private var _playerMC_hackForSwf : MovieClip;
 		private var _boundBoxKlass:Object;
 		
-		public static function Instance() : ObjectPool {
+		public static function get instance() : ObjectPool {
 			if( null == theObjectPool ) {
 				theObjectPool = new ObjectPool(new SingletonEnforcer());
 			}
@@ -56,8 +56,8 @@ package util
 				
 				for( var i : int = 0; i < elem.count; ++i ) {
 					
-					var mc : MovieClip = createMC_swf( elem.type ); //   createMC( elem.type );
-					var iWO : IWorldObject = WorldObjectFactory.Instance().createWorldObject( elem.type, new Rectangle( 0,0,mc.width, mc.height ) );
+					var mc : MovieClip = createMC_swf( elem.type );
+					var iWO : IWorldObject = WorldObjectFactory.instance.createWorldObject( elem.type, new Rectangle( 0,0,mc.width, mc.height ) );
 					var mcv : MovieClipView = new MovieClipView( screenContainer, iWO, mc );
 					mcv.active = false;
 					a.push( new PoolObject(iWO, mcv ) );
@@ -174,6 +174,7 @@ package util
 			_hackLoadSwfCompleteCallback();
 			
 			_boundBoxKlass = ad.getDefinition( "BoundingBox" ) as Class;
+			
 		}
 
 		

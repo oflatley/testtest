@@ -5,7 +5,7 @@ package util
 		private var _width : int;
 		private var _height : int;
 		
-		public function BitArray2D( width : uint, height : uint, v : Vector.<uint> )
+		public function BitArray2D( width : uint, height : uint, v : Array )
 		{
 			_width = width;
 			_height = height;

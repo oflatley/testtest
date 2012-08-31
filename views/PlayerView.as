@@ -21,11 +21,11 @@ package views
 
 		public function PlayerView()
 		{
-			mc = ObjectPool.Instance().playerMC; // for swc: new Player();
+			mc = ObjectPool.instance.playerMC; // for swc: new Player();
 			
 			
 			for( var i : int = 0; i < _debugTP.length; ++i ) {
-				_debugTP[i] = ObjectPool.Instance().getDebugBoundingBox();
+				_debugTP[i] = ObjectPool.instance.getDebugBoundingBox();
 				_debugTP[i].width = 3;
 				_debugTP[i].height = 3;
 			}
@@ -44,7 +44,7 @@ package views
 		
 		protected function onPlayerScale(event:PlayerEvent):void
 		{
-			var n : Number = event.scale;
+ 			var n : Number = event.scale;
 			mc.scaleX = n;
 			mc.scaleY = n; 			
 		}

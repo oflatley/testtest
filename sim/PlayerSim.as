@@ -49,13 +49,15 @@ package sim
 		private var _collisionTestPointsJumpingUp : Vector.<Point> = new Vector.<Point>(5);
 		private var _registrationPointOffset:Point;
 		
-		public function PlayerSim( controller:Controller, velX:Number, _gravity:Number, bounds:Rectangle, _collisionMgr : CollisionManager )
+		public function PlayerSim( controller:Controller, velX:Number, gravity:Number, bounds:Rectangle, _collisionMgr : CollisionManager )
 		{
+	
+			trace('PlayerSim ctr ... velocity: ' + _velocity.x + ' ' +_velocity.y );	
 			super(null);
 			reset();
 				
 			_velocityX = velX;
-			_gravity = _gravity ;			
+			_gravity = gravity ;			
 			_playerController = controller;			
 			_playerController.addEventListener(ControllerEvent.JUMP, onJump );		
 			_collisionMgr.addEventListener(CollisionEvent.PLAYERxWORLD, onCollision_playerVsWorld );		
@@ -66,6 +68,10 @@ package sim
 			initCollisionTestPoints( _collisionTestPointsWalking );
 			initCollisionTestPoints( _collisionTestPointsJumping );
 			initCollisionTestPoints( _collisionTestPointsJumpingUp );			
+		
+	
+			//if( !_velocity ) 
+			
 		}
 		
 		private function initLocalCollisionTestPoints( scale : Number ) : void {
@@ -147,9 +153,11 @@ package sim
 		}
 		
 		public function Update() : void {
-			trace( (_objectUnderfootPreviousFrame != null) + ' ' + (_objectUnderfootThisFrame != null) ); 
-
-			move(velocity);
+			//trace( (_objectUnderfootPreviousFrame != null) + ' ' + (_objectUnderfootThisFrame != null) ); 
+			
+			//trace( _velocity.x + ' ' + _velocity.y );
+			
+			move(_velocity);
 			applyPendingCollisions();
 			
   			//var pos:Vector2 = new Vector2();
@@ -352,7 +360,6 @@ package sim
 			
 			var event : PlayerEvent = new PlayerEvent( PlayerEvent.PLAYER_DEBUG_INVALIDATE_COLLISION_NODES );
 			event.collisionNodes_debug = collisionTestPoints;
-//			view.drawTestPoints( collisionTestPoints );
 		}
 		
 		public function get velocity():Vector2

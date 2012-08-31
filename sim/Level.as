@@ -35,8 +35,8 @@ package sim
 		private var _scrollSignaled : Boolean;
 		private var _ndxCurrentScreenSlice : int;
 		private var _objectsToRemove : Array;
-	
-		public function Level( sLevelName : String, _collisionMgr : CollisionManager, playerSim : PlayerSim)
+		
+		public function Level( data : Array, _collisionMgr : CollisionManager, playerSim : PlayerSim )	
 		{			
 			_scrollSignaled = false;
 			
@@ -56,11 +56,11 @@ package sim
 			// find max x
 			var maxX : int = 0;
 			var maxX0 : int = 0;
-			var data : Array = new LevelFactory().GetLevel( sLevelName ).data;
+
 			for each( var elem:Object in data ) {
 				
 				if( null == typeWidths[elem.type] ) {
-					typeWidths[elem.type] = ObjectPool.Instance().getProp( elem.type, "width" ) as Number;
+					typeWidths[elem.type] = ObjectPool.instance.getProp( elem.type, "width" ) as Number;
 				}
 								
 				var width : Number = typeWidths[elem.type];
@@ -118,7 +118,7 @@ package sim
 			for each ( var info : ObjBucketInfo in a ) {
 				
 				// get world object from object pool and initialize
-				var wo : IWorldObject = ObjectPool.Instance().GetObj( info.type );
+				var wo : IWorldObject = ObjectPool.instance.GetObj( info.type );
 				wo.position = new Point( info.x0, info.y );
 				
 				if( info.props ) {
@@ -153,7 +153,9 @@ package sim
 		private function removeObject( woToRemove:IWorldObject ) : void {
 
 			removeFromActiveObjects( woToRemove );	
-			ObjectPool.Instance().RecycleObj( woToRemove );
+			ObjectPool.instance
+				.RecycleObj( woToRemove );
+			
 			// do not bother removing from buckets_endX --> do that between levels			
  		}
 		
