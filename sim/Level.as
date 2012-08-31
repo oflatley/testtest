@@ -60,7 +60,7 @@ package sim
 			for each( var elem:Object in data ) {
 				
 				if( null == typeWidths[elem.type] ) {
-					typeWidths[elem.type] = ObjectPool.instance.getProp( elem.type, "width" ) as Number;
+					typeWidths[elem.type] = ObjectPool.instance.getProp( elem.type, "w" ) as Number;
 				}
 								
 				var width : Number = typeWidths[elem.type];

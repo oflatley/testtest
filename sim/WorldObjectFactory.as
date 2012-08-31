@@ -1,23 +1,17 @@
 package sim
 {
-	import avmplus.getQualifiedClassName;
-	
-	import collision.CollisionDataProvider;
-	
+	import avmplus.getQualifiedClassName;	
+	import collision.CollisionDataProvider;	
 	import events.CollisionEvent;
-	import events.WorldObjectEvent;
-	
+	import events.WorldObjectEvent;	
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.events.EventDispatcher;
 	import flash.geom.Point;
-	import flash.geom.Rectangle;
-	
-	import interfaces.IWorldObject;
-	
+	import flash.geom.Rectangle;	
+	import interfaces.IWorldObject;	
 	import util.CollisionResult;
-	
-	
+		
 	public class WorldObjectFactory {
 		
 		LauncherSim;
@@ -31,14 +25,12 @@ package sim
 		ElevatorPlatformSim;
 		EnemyBlobSim;
 		LevelPlatformDataSim;
-
 		
 		// querry strings
 		public static const Q_CONSUMABLE : String = "consumable_q";
 		public static const Q_MONSTER : String = "monster_q";
 		public static const Q_COLLIDEABLE_FROM_BELOW : String = "collideBelow_q";
-		
-			
+				
 		private static var theWorldObjectFactory : WorldObjectFactory = null;		
 		private var _map : Array = new Array();
 		
@@ -122,11 +114,7 @@ class WorldObjSimBase extends EventDispatcher implements IWorldObject {
 		_collisionResult = new CollisionResult();
 		_querryMap = new Array();
 	}
-	
-	public function get width() : Number { 			// todo die die die
-		return _bounds.width;
-	}
-	
+		
 	public function get id() : String {
 		return _id;
 	}

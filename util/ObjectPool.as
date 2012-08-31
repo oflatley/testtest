@@ -1,13 +1,16 @@
 package util
 {
 	import events.CollisionEvent;
+	import events.ObjectPoolEvent;
 	
 	import flash.display.Loader;
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.events.EventDispatcher;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.net.URLLoader;
 	import flash.net.URLRequest;
 	import flash.system.ApplicationDomain;
 	import flash.utils.getDefinitionByName;
@@ -19,17 +22,15 @@ package util
 	
 	import views.MovieClipView;
 
-	public class ObjectPool
+	public class ObjectPool extends EventDispatcher
 	{
 		private static var theObjectPool : ObjectPool = null;		
 		private var poolMap : Array;
 		private var activeList : Array;
-
-		private var _hackLoadSwfCompleteCallback : Function;		// for swf based assets
 		private var _mcMapping_swf : Array = new Array();			// for swf based assets
-
 		private var _playerMC_hackForSwf : MovieClip;
 		private var _boundBoxKlass:Object;
+		private var _objectInfo : Array = new Array();
 		
 		public static function get instance() : ObjectPool {
 			if( null == theObjectPool ) {
@@ -39,10 +40,11 @@ package util
 		}
 		
 		public function ObjectPool(_:SingletonEnforcer) {
+			super();
 			poolMap = new Array();
 			activeList = new Array();
 		}
-			
+					
 		public function get playerMC() : MovieClip {
 			return _playerMC_hackForSwf;
 		}
@@ -82,7 +84,7 @@ package util
 				return po.iWorldObj; 
 			}
 
-			trace( "@@@@@ COULD NOT ALLOC TYPE:" + type + "FROM OBJECT POOL @@@@@" );
+			throw new Error( "@@@@@ COULD NOT ALLOC TYPE:" + type + "FROM OBJECT POOL @@@@@" );
 			return null;
 		}
 		
@@ -103,10 +105,9 @@ package util
 			}
 		}
 
-		// DEPRECATED: getProp  --> cumbersome to implement all properties in the IWorldObject interface
 		public function getProp( type:String, name:String ) : Object {
-			var wo : IWorldObject = poolMap[type][0].iWorldObj;
-			return wo[name];
+			var woInfo : Object = _objectInfo[type];
+			return woInfo[name];
 		}
 
 		public function debug( ) : void {
@@ -119,38 +120,9 @@ package util
 			trace(s);
 		}
 
-/*	if using swc ...	
-		private function createMC(type:String):MovieClip
-		{	
-			var mc:MovieClip;
-			
-			switch(type) {	
-				case "Catapult": return new Catapult(); break;
-				case "Trampoline": return new Trampoline(); break;
-				case "Launcher": return new Launcher(); break;
-				case "Token_MakePlayerBigger": return new Token_MakePlayerBigger(); break;
-				case "Token_MakePlayerSmaller": return new Token_MakePlayerSmaller(); break;  
-				case "SpringBoard": return new SpringBoard(); break;
-				case "Brain":	return new Brain(); break;
-				case "SpeedBoostCoin": return new SpeedBoostCoin(); break;
-				case "Enemy_0": return new Enemy_0(); break;
-				case "Column": return new Column(); break; 
-				case "PlatformShort_elev": return new PlatformShort_0; break;
-				case "PlatformShort_0": return new PlatformShort_0(); break;
-				case "PlatformMedium_0": return new PlatformMedium_0(); break;
-				case "PlatformLong_0": return new PlatformLong_0(); break;							
-				case "PlatformMedium_15": return new PlatformMedium_15(); break;	
-				case "PlatformMedium_345": return new PlatformMedium_345(); break;
-				case "Platform_Arc_0":	return new Platform_Arc_0(); break;
-				default:
-					trace("unknown type encountered in createWorldObject");					
-					return new MovieClip();
-			}			
-		}	
-*/		
 		// swf loading support
-		public function buildMovieClipClasses( swfFile : String, cb : Function )  : void {
-			_hackLoadSwfCompleteCallback = cb;
+		public function buildMovieClipClasses( swfFile : String )  : void {
+			
 			var loader:Loader = new Loader();
 			loader.contentLoaderInfo.addEventListener( Event.COMPLETE, onSwfLoadComplete );
 			loader.load( new URLRequest(swfFile) );
@@ -171,12 +143,31 @@ package util
 			_mcMapping_swf["PlatformShort_elev"] = _mcMapping_swf['PlatformShort_0'];
 			_playerMC_hackForSwf = createMC_swf("Player");
 			
-			_hackLoadSwfCompleteCallback();
-			
 			_boundBoxKlass = ad.getDefinition( "BoundingBox" ) as Class;
-			
+			dispatchEvent( new ObjectPoolEvent( ObjectPoolEvent.INITIALIZED ) );				
 		}
 
+		public function	loadObjectInfo( sURL : String) : void {
+			var urlLoader : URLLoader = new URLLoader() ;
+			var urlReq : URLRequest = new URLRequest( sURL );
+			urlLoader.load(urlReq);
+			urlLoader.addEventListener( Event.COMPLETE, onObjInfoLoaded );		
+			
+		}
+		
+		protected function onObjInfoLoaded(event:Event):void
+		{
+			event.target.removeEventListener( Event.COMPLETE, arguments.callee );
+			var json : Object = JSON.parse( event.target.data );
+			var objInfo : Array = json.objectInfo;
+			
+			for each( var oi:Object in objInfo ) {				
+				_objectInfo[oi.type] = oi.info;
+			}
+
+			dispatchEvent( new ObjectPoolEvent( ObjectPoolEvent.INITIALIZED ) );				
+		}		
+		
 		
 		
 		private function createMC_swf( type:String ) : MovieClip {

@@ -1,9 +1,13 @@
 package collision
 {
 
+	import events.CollisionDataProviderEvent;
+	
+	import flash.events.EventDispatcher;
+	
 	import interfaces.ICollisionData;
 
-	public class CollisionDataProvider { 
+	public class CollisionDataProvider extends EventDispatcher { 
 	
 		private static var _theInstance : CollisionDataProvider = null;
 		private var _map:Array;		// associate [type name] <--> CollisionData  e.g.  ['platform_arc'] = new CollisionData(w,h,bitData);
@@ -17,9 +21,10 @@ package collision
 			_map = new Array();
 		}
 		
-		public function buildCollisionData( url : String,  completedCallback : Function ) : void {			
+		public function buildCollisionData( url : String) : void {			
 			var dfp : DatFileParser = new DatFileParser();
-			dfp.parse( url, completedCallback, _map );
+			dfp.parse( url, _map );
+			dfp.addEventListener( CollisionDataProviderEvent.INITIALIZED, onLoaded );
 		}
 		
 		public static function get instance() : CollisionDataProvider {
@@ -29,6 +34,10 @@ package collision
 			return _theInstance;
 		}
 		
+		protected function onLoaded(event:CollisionDataProviderEvent):void {
+			dispatchEvent(event);
+		}
+		
 	}
 }
 
@@ -36,29 +45,27 @@ class SingletonEnforcer {}
 
 import collision.CollisionData;
 
+import events.CollisionDataProviderEvent;
+
 import flash.events.Event;
+import flash.events.EventDispatcher;
 import flash.events.IOErrorEvent;
 import flash.net.URLLoader;
 import flash.net.URLRequest;
 
 
-
-
-
-class DatFileParser {
+class DatFileParser extends EventDispatcher{
 
 	private var _map : Array;
-	private var _completedCallback : Function;
 	
-	public function parse( sURL : String, completedCallback : Function, map : Array ) : void {
-		_completedCallback = completedCallback;
+	public function parse( sURL : String, map : Array ) : void {
+
 		_map = map;
 		var urlLoader : URLLoader = new URLLoader() ;
 		var urlReq : URLRequest = new URLRequest( sURL );
 		urlLoader.load(urlReq);
 		urlLoader.addEventListener( Event.COMPLETE, onDataLoaded );		
 	}
-
 	
 	protected function onDataLoaded(event:Event):void
 	{	
@@ -74,83 +81,7 @@ class DatFileParser {
 			
 			_map[s] = new CollisionData( w, h, bv );
 		}
-		
-		_completedCallback();
-		
-/*		
-		var ss : String = event.target.data as String;
-		var ssSplits : Array = ss.split( /\s+/ );
-		var idxCursor : int = 0;
-		var dx : int = 0;
+		dispatchEvent( new CollisionDataProviderEvent(CollisionDataProviderEvent.INITIALIZED) );		
 
-		for each ( var s : String in ssSplits ) {
-		
-			if( s.length ) {
-			
-				var sSplits : Array  = s.split( /:/ );
-				
-				var dfp : DatFileParserWorker = new DatFileParserWorker(sSplits[1]);
-				var w : uint = dfp.getNext();
-				var h : uint = dfp.getNext();			
-				var dim : uint = w*h;
-				var count : uint = (dim >> 5) + ( (dim&31) ? 1 : 0 );
-				var v : Vector.<uint> = new Vector.<uint>(count);	
-				var vdx : int = 0;
-				
-				while( dfp.hasNext() ) {
-					v[vdx++] = dfp.getNext();
-				}
-				
-				var type : String = sSplits[0];		
-				var cd : CollisionData = new CollisionData( w,h,v );
-				_map[type] = cd;
-
-			}
-		}
-		_completedCallback();
-*/		
 	}	
-
-
 }
-
-
-class DatFileParserWorker {
-
-	private var _src : String;
-	private var _idxCursor : int;
-	
-	public function DatFileParserWorker( s : String ) {
-		_src = s;
-		_idxCursor = 0;
-	}
-	
-	public function hasNext() : Boolean {
-		return _idxCursor < _src.length; 
-	}
-	
-	public function getNext() : uint {
-		
-//		if( _idxCursor >= _src.length ) {
-//			return -1;
-//		}
-		
-		var _idxStart : int = _idxCursor;
-		
-		for( ; _idxCursor < _src.length; ++_idxCursor ) {
-			if( ',' == _src.charAt( _idxCursor )  ) {
-				break;
-			}
-		}
-		
-		_idxCursor++;
-		var sThisValue : String = _src.slice( _idxStart, _idxCursor -1 );
-		var ret : uint = uint( sThisValue );
-		return uint( sThisValue );
-	}
-
-
-}
-
-
-

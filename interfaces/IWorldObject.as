@@ -20,8 +20,5 @@ package interfaces {
 		function update() : void;
 		function onCollision( player : PlayerSim ) : void;		
 		function querry( s : String ) : Boolean; 
-		
-		// DEPRECATED BELOW
-		function get width() : Number; 		
 	}
 }

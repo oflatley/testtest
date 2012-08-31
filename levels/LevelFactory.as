@@ -1,6 +1,8 @@
 package levels
-{
-	import data.level.*;
+{	
+	import events.LevelEvent;
+	
+	import flash.events.EventDispatcher;
 	
 	import interfaces.ILevelData;
 	
@@ -9,16 +11,23 @@ package levels
 	
 	import util.CollisionManager;
 	
-	public class LevelFactory
+	public class LevelFactory extends EventDispatcher
 	{
 		private static var _theThe : LevelFactory = null;
 		private var _levels:Array = new Array();
+		private var _cm : CollisionManager = null;
+		private var _ps : PlayerSim = null;
 				
 		public static function get instance() : LevelFactory {
 			if( !_theThe ) {
 				_theThe = new LevelFactory( new SingletonEnforcer() );
 			}
 			return _theThe;
+		}
+		
+		public function initialize( cm : CollisionManager, ps : PlayerSim ) : void {
+			_cm = cm;
+			_ps = ps;			
 		}
 		
 		public function LevelFactory( se : SingletonEnforcer ) {
@@ -29,41 +38,42 @@ package levels
 		public function registerLevel( tag : String, levelInstanceClass : Class ) : void {
 			_levels[tag] = levelInstanceClass;
 		}
-		
-		public function generateLevel( s:String, cm : CollisionManager, ps : PlayerSim ) : Level {
+				
+		public function generateLevel( s:String ) : void {
 			var li : LevelInstanceBase = new _levels[s]();
-			var a : Array = li.generate();
-			return new Level( a, cm, ps );
+			li.addEventListener( LevelEvent.GENERATED, onGenerationComplete );
+			li.generate(); 
 		}
+		
+		private function onGenerationComplete( event : LevelEvent ):void
+		{			
+			var aGeneratedLevel : Array = event.payload;
+		
+			// hijack the event, just replacing the payload. We don't need a new LevelEvent, just reuse thisß
+//			event.payload = new Level( aGeneratedLevel, _cm, _ps );
+//			dispatchEvent( event );
+			
+			var le : LevelEvent = new LevelEvent( LevelEvent.GENERATED, new Level( aGeneratedLevel, _cm, _ps ) );
+			dispatchEvent( le );
+		}		
 	}
 }
 
 class SingletonEnforcer {}
 
-import data.level.*;
-
 import levels.LevelFactory;
 import levels.LevelInstanceBase;
 
-class LevelRegistrationAgent {
-	
-	
-	static public function register( name : String, klass : Class ) : void {
-	//	LevelFactory.instance.registerLevel(name,klass);		
-	}
-}
 
 class LevelInstance_0 extends LevelInstanceBase {
-	LevelRegistrationAgent.register( "Level0", LevelInstance_0 );	
 	public function LevelInstance_0() {
-		super.sections = [Level0];//,Level1]; 	
+		super.sections = ['Level0'];//,Level1]; 	
 	}	
 }
 
 class LevelInstance_1 extends LevelInstanceBase {
-	LevelRegistrationAgent.register( "Level1", LevelInstance_1 );
 	public function LevelInstance_1( ) {		
-		super.sections = [Level0,Level1];
+		super.sections = ['Level0','Level1'];
 	}
 }	
 

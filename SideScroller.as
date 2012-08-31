@@ -3,7 +3,10 @@ package
 	
 	import collision.CollisionDataProvider;
 	
+	import events.CollisionDataProviderEvent;
 	import events.ControllerEvent;
+	import events.LevelEvent;
+	import events.ObjectPoolEvent;
 	
 	import flash.display.Loader;
 	import flash.display.MovieClip;
@@ -36,8 +39,6 @@ package
 	[SWF(width='960', height='640')]
 	public class SideScroller extends Sprite
 	{
-		LevelFactory;
-		
 		private var collisionManager : CollisionManager;
 		private var playerMC : MovieClip;
 		private static const velocityX:Number = 2.5;
@@ -48,11 +49,11 @@ package
 		private var currentLevel:Level;
 		private var screenContainer : ScreenContainer;
 		private var collisionDataProvider : CollisionDataProvider;		
+		private var _waitingToCompleteCount : int;
 
+		
 		private static const objPoolAllocs : Array = [
-			
-			{type:"Platform_Arc_0" , 	count:1 },
-/*			
+			{type:"Platform_Arc_0" , 	count:5 },			
 			{type:"PlatformShort_0" , 	count:12 },			
 			{type:"PlatformMedium_0", 	count:10 },
 			{type:"PlatformMedium_15", 	count:10 },
@@ -69,7 +70,6 @@ package
 			{type:"Trampoline", count:3 },
 			{type:"Launcher",count:5 },
 			{type:"Catapult",count:3 },
-*/			
 			];
 
 		
@@ -80,12 +80,22 @@ package
 			collisionManager = new CollisionManager();
 			screenContainer = ScreenContainer.Instance();
 			addChild( screenContainer.container );						
-			ObjectPool.instance.buildMovieClipClasses( 'assets/assets.swf', init); // if using swf			
-			// swc: loadData()  ;
+
+			_waitingToCompleteCount = 3;
+			ObjectPool.instance.buildMovieClipClasses( 'assets/assets.swf'); 
+			ObjectPool.instance.loadObjectInfo( 'data/objectInfo.xml');
+			ObjectPool.instance.addEventListener( ObjectPoolEvent.INITIALIZED, onInitialized );
+			CollisionDataProvider.instance.buildCollisionData("data/collisionObj/collisionData.xml");
+			CollisionDataProvider.instance.addEventListener( CollisionDataProviderEvent.INITIALIZED, onInitialized );			
 		}
 		
-		private function init(): void {
-			CollisionDataProvider.instance.buildCollisionData("data/collisionObj/collisionData.xml", startGame );
+		private function onInitialized(e:Event): void {
+		
+			_waitingToCompleteCount--;
+		
+			if( 0 == _waitingToCompleteCount ) {
+				startGame();				
+			}
 		}
 		
 		private function startGame():void{
@@ -93,24 +103,35 @@ package
 			stage.color = 0x444444;
 			stage.frameRate = 60;
 			
-			ObjectPool.instance.initialize( objPoolAllocs, screenContainer );
 			var playerView : PlayerView = new PlayerView(  );
 			playerView.AddToScene( screenContainer.container );
 			playerSim = new PlayerSim(new Controller(stage), velocityX, gravity, playerView.getBounds(), collisionManager );
 			playerView.initEventListeners( playerSim );
 			playerSim.SetPosition( new Point( 10,405 ) );
 	
-  			currentLevel = LevelFactory.instance.generateLevel("Level0", collisionManager, playerSim );
+			ObjectPool.instance.initialize( objPoolAllocs, screenContainer );
+			currentLevel = null;
+			LevelFactory.instance.initialize( collisionManager, playerSim );
+			LevelFactory.instance.addEventListener( LevelEvent.GENERATED, onLevelGenerated ); 
+			LevelFactory.instance.generateLevel( "Level0") ; 
+
 			onResize( null );
 			addEventListener(Event.RESIZE, onResize );
  			addEventListener(Event.ENTER_FRAME, onEnterFrame );
 		}
 		
+		protected function onLevelGenerated(event:LevelEvent):void
+		{
+			LevelFactory.instance.removeEventListener( LevelEvent.GENERATED, onLevelGenerated );
+			currentLevel = event.payload;
+		}
+		
 		private function onEnterFrame( e:Event ) : void {
-			playerSim.Update();
+		
+	 		playerSim.Update();
 			currentLevel.update(playerSim.worldPosition);
 			collisionManager.update(playerSim,currentLevel.activeObjects);		// dispatches CollisionEvents
-			screenContainer.update( playerSim.worldPosition );
+			screenContainer.update( playerSim.worldPosition );		
 		}
 		
 		private function onResize( e:Event ) : void {
